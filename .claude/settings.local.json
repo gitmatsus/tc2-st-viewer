@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cmd /c \"dir C:\\\\Users\\\\matsu\\\\AppData\\\\Local\\\\Temp\\\\fix_viewer.py 2>&1\")",
+      "Bash(python3 fix_viewer.py)",
+      "Bash(python3 -c \":*)",
+      "Bash(git init \"C:/Users/matsu/OneDrive - 株式会社ソフトエナジーコントロールズ/デスクトップ/BechoffTest/TEST\")",
+      "Bash(git add tc2_viewer.html .claude/)",
+      "Bash(git commit:*)"
+    ]
+  }
+}

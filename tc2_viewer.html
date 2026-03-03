@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TwinCAT 2 ST Viewer</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d1117;--surface:#161b22;--surface2:#1c2333;--border:#30363d;
+  --accent:#00d9ff;--accent2:#ff6b35;--text:#e6edf3;--text-dim:#7d8590;
+  --kw:#ff7b72;--type:#79c0ff;--str:#a5d6ff;--num:#ffa657;
+  --comment:#8b949e;--func:#d2a8ff;--bool:#56d364;--tc2kw:#f0c040;
+  --search-hl:#fff176;--search-cur:#ff9800;--line-h:1.6;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+header{display:flex;align-items:center;padding:8px 14px;background:var(--surface);border-bottom:1px solid var(--border);gap:10px;flex-shrink:0;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;letter-spacing:.05em;white-space:nowrap}
+.logo-icon{width:26px;height:26px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#000}
+.logo .v2{font-size:9px;font-weight:700;background:var(--tc2kw);color:#000;border-radius:3px;padding:1px 5px}
+.readonly-badge{font-size:10px;padding:2px 8px;border-radius:4px;background:rgba(255,123,114,.15);color:var(--kw);border:1px solid rgba(255,123,114,.3);font-weight:600;white-space:nowrap}
+.btn-open{padding:5px 12px;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--text-dim);cursor:pointer;font-size:12px;font-family:'Syne',sans-serif;font-weight:600;transition:all .15s;white-space:nowrap}
+.btn-open:hover{border-color:var(--accent);color:var(--accent)}
+
+.search-bar{display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;flex:1;min-width:200px;max-width:560px}
+.search-bar input{background:transparent;border:none;outline:none;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;flex:1;min-width:80px}
+.search-bar input::placeholder{color:var(--text-dim)}
+.search-opts{display:flex;gap:3px}
+.search-opt{padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;background:transparent;border:1px solid var(--border);color:var(--text-dim);transition:all .15s;font-family:'Syne',sans-serif}
+.search-opt.on{background:rgba(0,217,255,.15);border-color:var(--accent);color:var(--accent)}
+.search-count{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text-dim);white-space:nowrap;min-width:64px}
+.search-nav{display:flex;gap:2px}
+.search-nav button{padding:2px 8px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text-dim);cursor:pointer;font-size:12px;transition:all .15s}
+.search-nav button:hover{border-color:var(--accent);color:var(--accent)}
+.search-hint{font-size:10px;color:var(--text-dim);white-space:nowrap;font-family:'JetBrains Mono',monospace}
+
+.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface2);border:1px solid var(--accent);color:var(--accent);padding:6px 18px;border-radius:20px;font-size:12px;font-family:'JetBrains Mono',monospace;pointer-events:none;opacity:0;transition:all .25s;z-index:999}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.tab-bar{display:flex;gap:3px;padding:0 8px;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0}
+.tab{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:6px 6px 0 0;color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:11px;cursor:pointer;white-space:nowrap;transition:all .15s;border:1px solid transparent;border-bottom:none;position:relative;top:1px}
+.tab.active{background:var(--surface2);border-color:var(--border);color:var(--text)}
+.tab:hover:not(.active){color:var(--text);background:rgba(255,255,255,.04)}
+.tab .hit-count{font-size:9px;background:var(--search-cur);color:#000;border-radius:3px;padding:0 4px;font-weight:700}
+
+.main{display:flex;flex:1;overflow:hidden}
+.sidebar{width:210px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sidebar-section{border-bottom:1px solid var(--border)}
+.sidebar-header{padding:8px 12px 6px;font-size:10px;font-weight:600;letter-spacing:.12em;color:var(--text-dim);text-transform:uppercase;cursor:pointer;display:flex;align-items:center;gap:5px;user-select:none}
+.sidebar-header:hover{color:var(--text)}
+.sidebar-header .arrow{font-size:8px;transition:transform .15s}
+.sidebar-header.open .arrow{transform:rotate(90deg)}
+.tree-body{padding:2px 0 6px}
+.tree-folder{display:flex;align-items:center;gap:5px;padding:4px 12px;font-size:11px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;cursor:default}
+.tree-file{display:flex;align-items:center;gap:5px;padding:4px 12px 4px 22px;font-size:11px;font-family:'JetBrains Mono',monospace;cursor:pointer;color:var(--text-dim);transition:all .1s}
+.tree-file:hover{background:var(--surface2);color:var(--text)}
+.tree-file.active{color:var(--accent);background:rgba(0,217,255,.07)}
+.tree-file .prg-badge{font-size:9px;font-weight:700;background:rgba(121,192,255,.15);color:var(--type);border-radius:3px;padding:0 4px}
+.tree-file .hit-badge{font-size:9px;background:var(--search-cur);color:#000;border-radius:3px;padding:0 4px;font-weight:700;margin-left:auto}
+
+.editor-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.editor-wrapper{flex:1;display:flex;overflow:hidden;position:relative}
+.line-numbers{width:50px;background:var(--surface);border-right:1px solid var(--border);padding:16px 0;overflow:hidden;flex-shrink:0;user-select:none}
+.line-num{height:calc(1em * var(--line-h));display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text-dim);opacity:.45;line-height:var(--line-h)}
+.line-num.active-search{opacity:1;color:var(--search-cur)}
+.line-num.cursor-line{opacity:1;color:var(--accent)}
+
+.editor-scroll{flex:1;overflow:auto;position:relative}
+.highlight-layer{position:absolute;top:0;left:0;padding:16px;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:var(--line-h);white-space:pre;pointer-events:none;min-width:100%;word-break:normal;overflow-wrap:normal}
+#codeTextarea{position:absolute;top:0;left:0;width:100%;height:100%;padding:16px;background:transparent;color:transparent;caret-color:var(--accent);border:none;outline:none;resize:none;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:var(--line-h);white-space:pre;overflow:hidden;tab-size:2;cursor:text;-webkit-user-select:text;user-select:text}
+#codeTextarea::selection{background:rgba(0,217,255,0.20)}
+
+.kw{color:var(--kw);font-weight:500}
+.tc2kw{color:var(--tc2kw);font-weight:500}
+.type{color:var(--type)}
+.str{color:var(--str)}
+.num{color:var(--num)}
+.comment{color:var(--comment);font-style:italic}
+.func{color:var(--func)}
+.bool{color:var(--bool)}
+.search-hl{background:var(--search-hl);color:#000;border-radius:2px}
+.search-cur-hl{background:var(--search-cur);color:#000;border-radius:2px;box-shadow:0 0 0 2px #fff176}
+.word-sel{background:rgba(0,217,255,0.22);border-radius:2px}
+
+.status-bar{display:flex;align-items:center;gap:14px;padding:3px 14px;background:var(--surface);border-top:1px solid var(--border);font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text-dim);flex-shrink:0}
+.status-item{display:flex;align-items:center;gap:5px}
+.cursor-pos{margin-left:auto}
+
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text-dim)}
+
+#emptyState{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-dim);font-family:'JetBrains Mono',monospace;gap:14px;background:var(--surface2);z-index:5;pointer-events:none}
+.empty-icon{font-size:52px;opacity:.25}
+.empty-title{font-size:14px;font-weight:600;letter-spacing:.06em;color:var(--text)}
+.empty-sub{font-size:11px;opacity:.6}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">B</div>
+    TwinCAT <span class="v2">v2</span>&nbsp;ST Viewer
+  </div>
+  <span class="readonly-badge">🔒 読み取り専用</span>
+  <label class="btn-open">
+    📂 ファイルを開く
+    <input type="file" accept=".pro,.st,.exp" style="display:none" onchange="loadProFile(event)">
+  </label>
+  <div class="search-bar">
+    <span style="color:var(--text-dim);font-size:12px">🔍</span>
+    <input type="text" id="searchInput" placeholder="検索… (F2で選択範囲を取込)" oninput="onSearchInput()" onkeydown="onSearchKey(event)">
+    <div class="search-opts">
+      <button class="search-opt" id="optCase" onclick="toggleOpt('optCase')" title="大文字・小文字を区別">Aa</button>
+      <button class="search-opt" id="optWord" onclick="toggleOpt('optWord')" title="単語単位で検索">W</button>
+    </div>
+    <span class="search-count" id="searchCount"></span>
+    <div class="search-nav">
+      <button onclick="prevMatch()" title="前へ (Shift+F2)">▲</button>
+      <button onclick="nextMatch()" title="次へ (F3)">▼</button>
+    </div>
+  </div>
+  <span class="search-hint">ダブルクリック:単語選択　F2:検索取込　F3:次へ　Shift+F2:前へ</span>
+</header>
+
+<div class="tab-bar" id="tabBar"></div>
+
+<div class="main">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="editor-area">
+    <div class="editor-wrapper">
+      <div class="line-numbers" id="lineNumbers"></div>
+      <div class="editor-scroll" id="editorScroll" onscroll="syncScroll()">
+        <div class="highlight-layer" id="highlightLayer"></div>
+        <div id="emptyState"><div class="empty-icon">📂</div><div class="empty-title">ファイルを開いてください</div><div class="empty-sub">.pro / .st / .exp ファイルに対応</div></div>
+        <textarea id="codeTextarea" readonly spellcheck="false" autocomplete="off"
+          ondblclick="onDblClick(event)"
+          onmouseup="onMouseUp(event)"
+          onclick="onEditorClick(event)"
+          onkeydown="onTextareaKey(event)"></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="status-bar">
+  <div class="status-item" style="color:var(--tc2kw)">TwinCAT 2 / ST</div>
+  <div class="status-item" id="statusFile">-</div>
+  <div class="status-item" id="statusLines">-</div>
+  <div class="status-item" id="statusSel"></div>
+  <div class="status-item cursor-pos" id="cursorPos">行 -</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// Embedded project data
+// ============================================================
+let PROJECT_DATA = null;
+
+// ============================================================
+// TC2 syntax definitions
+// ============================================================
+const TC2_KWS=['PROGRAM','END_PROGRAM','FUNCTION_BLOCK','END_FUNCTION_BLOCK','FUNCTION','END_FUNCTION','VAR','VAR_INPUT','VAR_OUTPUT','VAR_IN_OUT','VAR_GLOBAL','VAR_EXTERNAL','VAR_PERSISTENT','VAR_RETAIN','END_VAR','IF','THEN','ELSIF','ELSE','END_IF','CASE','OF','END_CASE','FOR','TO','BY','DO','END_FOR','WHILE','END_WHILE','REPEAT','UNTIL','END_REPEAT','RETURN','EXIT','NOT','AND','OR','XOR','MOD','DIV','STRUCT','END_STRUCT','TYPE','END_TYPE','AT','RETAIN','PERSISTENT','CONSTANT','POINTER','REF_TO','ARRAY'];
+const TC2_TYPES=['BOOL','INT','UINT','DINT','UDINT','LINT','ULINT','SINT','USINT','BYTE','WORD','DWORD','LWORD','REAL','LREAL','STRING','WSTRING','TIME','DATE','DT','DATE_AND_TIME','TIME_OF_DAY','TOD','ANY','TON','TOF','TP','RTC','CTU','CTD','CTUD','R_TRIG','F_TRIG','RS','SR'];
+const KW_RE  =new RegExp('\\b('+TC2_KWS.join('|')+')\\b','g');
+const TYPE_RE=new RegExp('\\b('+TC2_TYPES.join('|')+')\\b','g');
+const TC2F_RE=/\b(LEN|LEFT|RIGHT|MID|CONCAT|INSERT|DELETE|REPLACE|FIND|ABS|SQRT|SIN|COS|TAN|ASIN|ACOS|ATAN|EXP|LOG|LN|MAX|MIN|LIMIT|SEL|MUX|SHL|SHR|ROL|ROR|INT_TO_REAL|REAL_TO_INT|DINT_TO_REAL|REAL_TO_DINT|BOOL_TO_INT|INT_TO_STRING|DINT_TO_STRING|REAL_TO_STRING|WORD_TO_DWORD|MEMSET|MEMCPY|ADR)\b/g;
+const BOOL_RE=/\b(TRUE|FALSE)\b/g;
+const NUM_RE =/\b(\d+\.?\d*(?:[eE][+-]?\d+)?|16#[0-9A-Fa-f]+|2#[01]+|T#[\dSMHD_]+)\b/g;
+const FUNC_RE=/\b([A-Za-z_][A-Za-z0-9_]*)\s*(?=\()/g;
+
+// ============================================================
+// State
+// ============================================================
+let activeTabId=null;
+let searchMatches=[];
+let searchCurIdx=-1;
+let optCase=false,optWord=false;
+let cursorLineIdx=0;   // line index where user last clicked in editor
+let dblWord='';        // word highlighted by last dblclick
+
+// ============================================================
+// Syntax highlight
+// ============================================================
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function hlSeg(s){
+  return esc(s)
+    .replace(KW_RE,  '<span class="kw">$1</span>')
+    .replace(TYPE_RE,'<span class="type">$1</span>')
+    .replace(TC2F_RE,'<span class="tc2kw">$1</span>')
+    .replace(BOOL_RE,'<span class="bool">$1</span>')
+    .replace(NUM_RE, '<span class="num">$1</span>')
+    .replace(FUNC_RE,(_,fn)=>`<span class="func">${fn}</span>(`);
+}
+
+function hlLine(line){
+  const pr=[];
+  const cmRe=/\(\*[\s\S]*?\*\)|\/\/.*/g;
+  const stRe=/'[^']*'/g;
+  let m;
+  cmRe.lastIndex=0;
+  while((m=cmRe.exec(line))!==null) pr.push({s:m.index,e:m.index+m[0].length,t:'c',v:m[0]});
+  stRe.lastIndex=0;
+  while((m=stRe.exec(line))!==null){
+    if(!pr.some(r=>m.index<r.e&&m.index+m[0].length>r.s))
+      pr.push({s:m.index,e:m.index+m[0].length,t:'s',v:m[0]});
+  }
+  pr.sort((a,b)=>a.s-b.s);
+  let out='',pos=0;
+  for(const r of pr){
+    if(r.s>pos) out+=hlSeg(line.slice(pos,r.s));
+    out+=r.t==='c'?`<span class="comment">${esc(r.v)}</span>`:`<span class="str">${esc(r.v)}</span>`;
+    pos=r.e;
+  }
+  if(pos<line.length) out+=hlSeg(line.slice(pos));
+  return out;
+}
+
+// ============================================================
+// Render
+// ============================================================
+function renderHighlight(tabId){
+  const code=PROJECT_DATA.pous[tabId]||'';
+  const lines=code.split('\n');
+
+  // Search match map
+  const lineMap=new Map();
+  searchMatches.forEach((m,idx)=>{
+    if(m.tabId!==tabId) return;
+    if(!lineMap.has(m.lineIdx)) lineMap.set(m.lineIdx,[]);
+    lineMap.get(m.lineIdx).push({start:m.start,end:m.end,isCur:idx===searchCurIdx});
+  });
+
+  // dblclick word highlight map
+  const wordMap=new Map();
+  if(dblWord){
+    const re=new RegExp('\\b'+escRe(dblWord)+'\\b','g');
+    lines.forEach((line,i)=>{
+      let wm;re.lastIndex=0;
+      while((wm=re.exec(line))!==null){
+        if(!wordMap.has(i)) wordMap.set(i,[]);
+        wordMap.get(i).push({start:wm.index,end:wm.index+wm[0].length});
+      }
+    });
+  }
+
+  const html=lines.map((line,i)=>{
+    const marks=lineMap.get(i)||[];
+    const wmarks=wordMap.get(i)||[];
+    if(!marks.length&&!wmarks.length) return hlLine(line);
+
+    // Merge: search > word
+    const all=[
+      ...marks.map(m=>({...m,type:m.isCur?'cur':'search'})),
+      ...wmarks.map(m=>({...m,type:'word'}))
+    ].sort((a,b)=>a.start-b.start);
+
+    const parts=[];let pos=0;
+    for(const mk of all){
+      if(mk.start<pos) continue;
+      if(mk.start>pos) parts.push({text:line.slice(pos,mk.start),type:'plain'});
+      parts.push({text:line.slice(mk.start,mk.end),type:mk.type});
+      pos=mk.end;
+    }
+    if(pos<line.length) parts.push({text:line.slice(pos),type:'plain'});
+    return parts.map(p=>{
+      if(p.type==='plain')  return hlLine(p.text);
+      if(p.type==='cur')    return `<span class="search-cur-hl">${esc(p.text)}</span>`;
+      if(p.type==='search') return `<span class="search-hl">${esc(p.text)}</span>`;
+      if(p.type==='word')   return `<span class="word-sel">${esc(p.text)}</span>`;
+    }).join('');
+  }).join('\n');
+
+  document.getElementById('highlightLayer').innerHTML=html+'\n';
+}
+
+function renderLineNumbers(tabId){
+  const code=PROJECT_DATA.pous[tabId]||'';
+  const lines=code.split('\n');
+  const searchLines=new Set(searchMatches.filter(m=>m.tabId===tabId).map(m=>m.lineIdx));
+  let h='';
+  for(let i=0;i<lines.length;i++){
+    let cls='line-num';
+    if(searchLines.has(i)) cls+=' active-search';
+    else if(i===cursorLineIdx) cls+=' cursor-line';
+    h+=`<div class="${cls}">${i+1}</div>`;
+  }
+  document.getElementById('lineNumbers').innerHTML=h;
+}
+
+function renderCode(tabId){
+  if(!PROJECT_DATA||!tabId){return;}
+  const code=PROJECT_DATA.pous[tabId]||'';
+  renderHighlight(tabId);
+  renderLineNumbers(tabId);
+  const ta=document.getElementById('codeTextarea');
+  if(ta.value!==code) ta.value=code;
+  const lines=code.split('\n');
+  document.getElementById('statusFile').textContent=tabId;
+  document.getElementById('statusLines').textContent=lines.length+' 行';
+}
+
+// ============================================================
+// Sidebar / Tabs
+// ============================================================
+function buildSidebar(){
+  if(!PROJECT_DATA){
+    document.getElementById('sidebar').innerHTML='<div style="padding:16px 12px;font-size:11px;color:var(--text-dim);font-family:JetBrains Mono,monospace;line-height:2">ファイルを開くと<br>ここにツリーが<br>表示されます</div>';
+    return;
+  }
+  const tree=PROJECT_DATA.tree;
+  let h='';
+  for(const [sec,folders] of Object.entries(tree)){
+    h+=`<div class="sidebar-section">
+      <div class="sidebar-header open" onclick="toggleSection(this)">
+        <span class="arrow">▶</span>${sec}
+      </div><div class="tree-body">`;
+    if(folders['__root__']) for(const f of folders['__root__']) h+=sbFile(f);
+    for(const [fn,files] of Object.entries(folders)){
+      if(fn==='__root__') continue;
+      h+=`<div class="tree-folder"><span>📁</span>${fn}</div>`;
+      for(const f of files) h+=sbFile(f);
+    }
+    h+=`</div></div>`;
+  }
+  document.getElementById('sidebar').innerHTML=h;
+}
+
+function sbFile(name){
+  const hits=searchMatches.filter(m=>m.tabId===name).length;
+  return `<div class="tree-file${activeTabId===name?' active':''}" onclick="openTab('${name}')">
+    <span class="prg-badge">PRG</span>${name}
+    ${hits>0?`<span class="hit-badge">${hits}</span>`:''}
+  </div>`;
+}
+
+function toggleSection(el){
+  el.classList.toggle('open');
+  el.nextElementSibling.style.display=el.classList.contains('open')?'':'none';
+}
+
+function getAllFiles(){
+  if(!PROJECT_DATA) return [];
+  const all=[];
+  for(const folders of Object.values(PROJECT_DATA.tree))
+    for(const files of Object.values(folders))
+      for(const f of files) if(!all.includes(f)) all.push(f);
+  return all;
+}
+
+function buildTabs(){
+  let h='';
+  for(const name of getAllFiles()){
+    const hits=searchMatches.filter(m=>m.tabId===name).length;
+    h+=`<div class="tab${activeTabId===name?' active':''}" onclick="openTab('${name}')">${name}${hits>0?`<span class="hit-count">${hits}</span>`:''}</div>`;
+  }
+  document.getElementById('tabBar').innerHTML=h;
+}
+
+function openTab(name){
+  activeTabId=name;
+  cursorLineIdx=0;
+  dblWord='';
+  buildTabs();buildSidebar();
+  renderCode(name);
+  document.getElementById('editorScroll').scrollTop=0;
+  document.getElementById('statusSel').textContent='';
+  // If search active, jump to first match in this tab
+  if(searchMatches.length>0){
+    const idx=searchMatches.findIndex(m=>m.tabId===name);
+    if(idx>=0){ searchCurIdx=idx; updateCount(); scrollToMatch(); }
+  }
+}
+
+// ============================================================
+// File open — CP932 decoding fix
+// ============================================================
+function loadProFile(event){
+  const file=event.target.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const parsed=parseProFile(e.target.result,file.name);
+      PROJECT_DATA=parsed;
+      searchMatches=[];searchCurIdx=-1;dblWord='';
+      document.getElementById('searchInput').value='';
+      document.getElementById('searchCount').textContent='';
+      const first=getAllFiles()[0];
+      activeTabId=first;cursorLineIdx=0;
+      buildTabs();buildSidebar();renderCode(first);
+      hideEmptyState();
+      showToast('📂 '+file.name+' を読み込みました');
+    }catch(err){showToast('⚠️ 読み込みエラー: '+err.message);}
+  };
+  // Read as ArrayBuffer for proper CP932 decoding
+  reader.readAsArrayBuffer(file);
+  event.target.value='';
+}
+
+function parseProFile(arrayBuffer, filename){
+  // Decode with CP932 (Shift-JIS) using TextDecoder with fallback
+  let text;
+  try{
+    // Try CP932/Shift-JIS first
+    const decoder=new TextDecoder('shift-jis');
+    text=decoder.decode(new Uint8Array(arrayBuffer));
+  }catch(e){
+    const decoder=new TextDecoder('utf-8',{fatal:false});
+    text=decoder.decode(new Uint8Array(arrayBuffer));
+  }
+
+  // Find all PROGRAM / FUNCTION_BLOCK / FUNCTION blocks
+  const progRe=/\b(PROGRAM|FUNCTION_BLOCK|FUNCTION)\s+(\w+)/g;
+  let m;
+  const positions=[];
+  while((m=progRe.exec(text))!==null){
+    const before=text.slice(Math.max(0,m.index-4),m.index);
+    if(/END_$/.test(before)) continue;
+    positions.push({name:m[2],pos:m.index});
+  }
+  if(!positions.length) throw new Error('POUブロックが見つかりません');
+
+  const pous={};
+  positions.forEach((p,i)=>{
+    const end=i+1<positions.length?positions[i+1].pos:text.length;
+    pous[p.name]=cleanBlock(text.slice(p.pos,end));
+  });
+
+  // Global_Variables CONSTANT
+  const gvIdx=text.indexOf('VAR_GLOBAL CONSTANT');
+  if(gvIdx>=0){
+    const cmtIdx=text.lastIndexOf('(*',gvIdx);
+    const start=(cmtIdx>=0&&gvIdx-cmtIdx<120)?cmtIdx:gvIdx;
+    const chunk=text.slice(start,start+5000);
+    const ev=chunk.indexOf('END_VAR');
+    if(ev>=0) pous['Global_Variables']=chunk.slice(0,ev+7).trim();
+  }
+
+  const tree=buildTree(pous,text);
+  return{tree,pous};
+}
+
+function cleanBlock(chunk){
+  const lines=chunk.split(/\r?\n/);
+  const out=[];
+  let binRun=0;
+  let inImpl=false; // 実装部（IF/FOR等）に入ったか
+
+  // バイナリ行から抽出できる構造的STパターン
+  const ST_IN_BIN=/\b(?:END_VAR|END_IF|END_FOR|END_CASE|END_WHILE|END_REPEAT|END_PROGRAM|END_FUNCTION(?:_BLOCK)?|IF\s+\w|FOR\s+\w|WHILE\s+\w|CASE\s+\w)\b/;
+
+  for(const line of lines){
+    const chars=[...line];
+    const np=chars.filter(c=>{const cc=c.charCodeAt(0);return cc<32&&cc!==9;}).length;
+    if(np>3){
+      // 実装部に入った後は厳しい閾値（次POUのバイナリを取り込まない）
+      if(++binRun>(inImpl?2:8)) break;
+      // バイナリ行から印字可能文字を抽出し非STセパレータで分割
+      const raw=chars.filter(c=>c.charCodeAt(0)>=32||c==='\t').join('');
+      const cleaned=raw.replace(/(?<=[A-Za-z0-9_\)\]])\s*[$@~|\\{}`!?]+\s*(?=[A-Za-z_])/g,'\n').trim();
+      for(const part of cleaned.split('\n')){
+        const p=part.trim();
+        // ST構造キーワードのみ採用（次POUのメタデータ等を除外）
+        if(p.length>2&&ST_IN_BIN.test(p)){
+          out.push(p);
+          if(/^(?:IF|FOR|WHILE|CASE)\s/.test(p)) inImpl=true;
+        }
+      }
+    }else{
+      binRun=0;
+      // 行頭の非ASCIIバイナリノイズを除去（ｾ1\t... → \t...）
+      const clean=line.replace(/^[^\x00-\x7F][\x20-\x7E]*(?=\t)/,'');
+      out.push(clean);
+      // クリーン行から実装部開始を検出
+      if(!inImpl&&(
+        /^\s+(?:IF|FOR|WHILE|CASE|REPEAT)\b/.test(clean)||
+        /^\t\w+\s*:=/.test(clean)
+      )) inImpl=true;
+    }
+  }
+  return out.join('\n').trim();
+}
+
+function buildTree(pous,text){
+  const knownFolders=['Function','ST_ERROR','ST_INPUT','ST_OUTPUT','ST_PROG','ST_ALARM'];
+  const folderMap={'__root__':[]};
+  const fileNames=Object.keys(pous).filter(k=>k!=='Global_Variables');
+
+  fileNames.forEach(name=>{
+    let placed=false;
+    for(const folder of knownFolders){
+      const fi=text.indexOf(folder);
+      if(fi<0) continue;
+      // Search for the file name within ±300 bytes of folder name
+      const region=text.slice(Math.max(0,fi-50),fi+350);
+      if(region.includes(name)){
+        if(!folderMap[folder]) folderMap[folder]=[];
+        if(!folderMap[folder].includes(name)){folderMap[folder].push(name);placed=true;break;}
+      }
+    }
+    if(!placed) folderMap['__root__'].push(name);
+  });
+
+  return{
+    'POUs':folderMap,
+    'Resources':pous['Global_Variables']?{'Global Variables':['Global_Variables']}:{}
+  };
+}
+
+// ============================================================
+// Search
+// ============================================================
+function onSearchInput(){runSearch();}
+
+function onSearchKey(e){
+  if(e.key==='Enter'){e.shiftKey?prevMatch():nextMatch();}
+  if(e.key==='Escape'){document.getElementById('searchInput').value='';runSearch();}
+}
+
+function toggleOpt(id){
+  const el=document.getElementById(id);
+  el.classList.toggle('on');
+  if(id==='optCase') optCase=el.classList.contains('on');
+  if(id==='optWord') optWord=el.classList.contains('on');
+  runSearch();
+}
+
+function runSearch(){
+  const q=document.getElementById('searchInput').value;
+  searchMatches=[];searchCurIdx=-1;
+
+  if(!PROJECT_DATA){updateCount();buildTabs();buildSidebar();return;}
+  if(q.length>=1){
+    for(const tabId of getAllFiles()){
+      const code=PROJECT_DATA.pous[tabId]||'';
+      code.split('\n').forEach((line,li)=>findInLine(line,q,li,tabId));
+    }
+    // Start from cursor position in active tab
+    searchCurIdx=findStartIdx();
+  }
+
+  updateCount();buildTabs();buildSidebar();
+  renderCode(activeTabId);
+  if(searchCurIdx>=0) scrollToMatch();
+}
+
+// Find the best starting index: first match at or after cursorLineIdx in active tab
+function findStartIdx(){
+  if(!searchMatches.length) return -1;
+  // First match at/after cursor in active tab
+  const idx=searchMatches.findIndex(m=>m.tabId===activeTabId&&m.lineIdx>=cursorLineIdx);
+  if(idx>=0) return idx;
+  // First match in active tab (wrap)
+  const idx2=searchMatches.findIndex(m=>m.tabId===activeTabId);
+  if(idx2>=0) return idx2;
+  // First match overall
+  return 0;
+}
+
+function findInLine(line,q,li,tabId){
+  if(optWord){
+    const re=new RegExp('\\b'+escRe(q)+'\\b',optCase?'g':'gi');
+    let m;
+    while((m=re.exec(line))!==null)
+      searchMatches.push({tabId,lineIdx:li,start:m.index,end:m.index+m[0].length});
+  }else{
+    const src=optCase?line:line.toLowerCase();
+    const term=optCase?q:q.toLowerCase();
+    let idx=0;
+    while(true){
+      const f=src.indexOf(term,idx);if(f<0)break;
+      searchMatches.push({tabId,lineIdx:li,start:f,end:f+term.length});
+      idx=f+1;
+    }
+  }
+}
+
+function escRe(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+
+function updateCount(){
+  const el=document.getElementById('searchCount');
+  const q=document.getElementById('searchInput').value;
+  if(!q){el.textContent='';return;}
+  if(!searchMatches.length){el.textContent='0件';el.style.color='var(--kw)';return;}
+  el.textContent=`${searchCurIdx>=0?searchCurIdx+1:'-'} / ${searchMatches.length}件`;
+  el.style.color='var(--accent)';
+}
+
+function nextMatch(){
+  if(!searchMatches.length) return;
+  searchCurIdx=(searchCurIdx+1)%searchMatches.length;
+  jumpTo(searchCurIdx);
+}
+
+function prevMatch(){
+  if(!searchMatches.length) return;
+  searchCurIdx=(searchCurIdx-1+searchMatches.length)%searchMatches.length;
+  jumpTo(searchCurIdx);
+}
+
+function jumpTo(idx){
+  updateCount();
+  const m=searchMatches[idx];
+  if(!m) return;
+  if(m.tabId!==activeTabId){
+    activeTabId=m.tabId;
+    buildTabs();buildSidebar();
+    renderCode(activeTabId);
+  }else{
+    renderHighlight(activeTabId);
+    renderLineNumbers(activeTabId);
+  }
+  // Ensure scroll happens AFTER render
+  requestAnimationFrame(()=>scrollToMatch());
+}
+
+function scrollToMatch(){
+  if(searchCurIdx<0) return;
+  const m=searchMatches[searchCurIdx];
+  if(!m||m.tabId!==activeTabId) return;
+
+  const scroll=document.getElementById('editorScroll');
+  const hl=document.getElementById('highlightLayer');
+  // Compute line height from actual rendered element
+  const lh=hl.scrollHeight/((PROJECT_DATA&&PROJECT_DATA.pous[activeTabId])||'').split('\n').length;
+  const targetY=m.lineIdx*lh+16;
+  const viewH=scroll.clientHeight;
+
+  // Always scroll if not fully visible
+  if(targetY<scroll.scrollTop+40||targetY+lh>scroll.scrollTop+viewH-40){
+    scroll.scrollTop=Math.max(0,targetY-viewH/3);
+  }
+  // Also sync line numbers
+  document.getElementById('lineNumbers').scrollTop=scroll.scrollTop;
+}
+
+// ============================================================
+// Editor interactions
+// ============================================================
+
+// Click: update cursor position (used as search start)
+function onEditorClick(e){
+  const ta=document.getElementById('codeTextarea');
+  // Calculate line from cursor position
+  setTimeout(()=>{
+    const pos=ta.selectionStart;
+    const textBefore=ta.value.slice(0,pos);
+    cursorLineIdx=textBefore.split('\n').length-1;
+    renderLineNumbers(activeTabId);
+    document.getElementById('cursorPos').textContent='行 '+(cursorLineIdx+1);
+  },0);
+}
+
+// Double-click: select word only (no copy)
+// Browser already selects the word on dblclick in textarea — we just capture it
+function onDblClick(e){
+  const ta=document.getElementById('codeTextarea');
+  setTimeout(()=>{
+    const start=ta.selectionStart,end=ta.selectionEnd;
+    if(start===end) return;
+    const word=ta.value.slice(start,end);
+    if(!word.trim()) return;
+    dblWord=word.trim();
+    // Update cursor line
+    cursorLineIdx=ta.value.slice(0,start).split('\n').length-1;
+    renderHighlight(activeTabId);
+    renderLineNumbers(activeTabId);
+    document.getElementById('statusSel').textContent='「'+dblWord+'」選択中';
+    document.getElementById('cursorPos').textContent='行 '+(cursorLineIdx+1);
+  },10);
+}
+
+// Mouse up: track manual selection
+function onMouseUp(e){
+  const ta=document.getElementById('codeTextarea');
+  setTimeout(()=>{
+    const start=ta.selectionStart,end=ta.selectionEnd;
+    if(start!==end){
+      const sel=ta.value.slice(start,end);
+      const lines=sel.split('\n').length;
+      document.getElementById('statusSel').textContent=
+        lines>1?`${lines}行 選択中`:`${sel.length}文字 選択中`;
+    }
+  },5);
+}
+
+// Ctrl+C copy feedback
+function onTextareaKey(e){
+  if((e.ctrlKey||e.metaKey)&&e.key==='c'){
+    const ta=document.getElementById('codeTextarea');
+    const sel=ta.value.slice(ta.selectionStart,ta.selectionEnd);
+    if(sel) setTimeout(()=>showToast('📋 コピーしました ('+sel.length+'文字)'),30);
+  }
+}
+
+// ============================================================
+// Keyboard shortcuts
+// ============================================================
+document.addEventListener('keydown',e=>{
+  if(e.key==='F2'){
+    e.preventDefault();
+    if(e.shiftKey){prevMatch();return;}
+
+    // Get current selection from textarea
+    const ta=document.getElementById('codeTextarea');
+    const start=ta.selectionStart,end=ta.selectionEnd;
+    let wordToSearch='';
+    if(start!==end){
+      wordToSearch=ta.value.slice(start,end).trim();
+    } else if(dblWord){
+      wordToSearch=dblWord;
+    }
+
+    const inp=document.getElementById('searchInput');
+    if(wordToSearch){
+      inp.value=wordToSearch;
+      // Update cursor line from selection start
+      cursorLineIdx=ta.value.slice(0,start).split('\n').length-1;
+      runSearch();
+      showToast('🔍 「'+wordToSearch+'」を検索');
+    } else {
+      inp.focus();inp.select();
+    }
+  }
+  if(e.key==='F3'){
+    e.preventDefault();
+    nextMatch();
+  }
+});
+
+// ============================================================
+// Scroll sync
+// ============================================================
+function syncScroll(){
+  const s=document.getElementById('editorScroll');
+  document.getElementById('highlightLayer').style.transform=
+    `translate(-${s.scrollLeft}px,-${s.scrollTop}px)`;
+  document.getElementById('lineNumbers').scrollTop=s.scrollTop;
+}
+
+// ============================================================
+// Empty state
+// ============================================================
+function showEmptyState(){
+  const el=document.getElementById('emptyState');
+  if(el) el.style.display='flex';
+  document.getElementById('codeTextarea').value='';
+  document.getElementById('highlightLayer').innerHTML='';
+  document.getElementById('lineNumbers').innerHTML='';
+  document.getElementById('statusFile').textContent='';
+  document.getElementById('statusLines').textContent='';
+  document.getElementById('tabBar').innerHTML='';
+}
+function hideEmptyState(){
+  const el=document.getElementById('emptyState');
+  if(el) el.style.display='none';
+}
+
+// ============================================================
+// Toast
+// ============================================================
+let toastTimer=null;
+function showToast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),1800);
+}
+
+// ============================================================
+// Init
+// ============================================================
+if(PROJECT_DATA){
+  const _ff=Object.values(PROJECT_DATA.tree)[0];
+  activeTabId=Object.values(_ff).flat()[0];
+  buildTabs();buildSidebar();renderCode(activeTabId);
+  hideEmptyState();
+}else{
+  buildSidebar();
+  showEmptyState();
+}
+</script>
+</body>
+</html>
