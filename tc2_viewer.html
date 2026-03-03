@@ -491,23 +491,93 @@ function cleanBlock(chunk){
 
 function buildTree(pous,text){
   const knownFolders=['Function','ST_ERROR','ST_INPUT','ST_OUTPUT','ST_PROG','ST_ALARM'];
-  const folderMap={'__root__':[]};
   const fileNames=Object.keys(pous).filter(k=>k!=='Global_Variables');
+  const isAlnum=c=>(c>=48&&c<=57)||(c>=65&&c<=90)||(c>=97&&c<=122)||c===95;
 
-  fileNames.forEach(name=>{
-    let placed=false;
-    for(const folder of knownFolders){
-      const fi=text.indexOf(folder);
-      if(fi<0) continue;
-      // Search for the file name within ±300 bytes of folder name
-      const region=text.slice(Math.max(0,fi-50),fi+350);
-      if(region.includes(name)){
-        if(!folderMap[folder]) folderMap[folder]=[];
-        if(!folderMap[folder].includes(name)){folderMap[folder].push(name);placed=true;break;}
+  // Collect all standalone positions of folder names
+  const folderOccs={};
+  for(const folder of knownFolders){
+    folderOccs[folder]=[];
+    let idx=0;
+    while(true){
+      const pos=text.indexOf(folder,idx);
+      if(pos<0) break;
+      idx=pos+folder.length;
+      if(pos>0&&isAlnum(text.charCodeAt(pos-1))) continue;
+      if(pos+folder.length<text.length&&isAlnum(text.charCodeAt(pos+folder.length))) continue;
+      folderOccs[folder].push(pos);
+    }
+  }
+
+  // Collect all standalone positions of file names
+  const fileOccs={};
+  for(const name of fileNames){
+    fileOccs[name]=[];
+    let idx=0;
+    while(true){
+      const pos=text.indexOf(name,idx);
+      if(pos<0) break;
+      idx=pos+name.length;
+      if(pos>0&&isAlnum(text.charCodeAt(pos-1))) continue;
+      if(pos+name.length<text.length&&isAlnum(text.charCodeAt(pos+name.length))) continue;
+      const before=text.slice(Math.max(0,pos-40),pos);
+      if(/\b(?:PROGRAM|FUNCTION_BLOCK|FUNCTION)\s+$/.test(before)) continue;
+      fileOccs[name].push(pos);
+    }
+  }
+
+  // Min distance between a file and a folder (across all occurrences)
+  function mDist(fileName,folder){
+    let min=Infinity;
+    for(const fp of fileOccs[fileName]||[])
+      for(const flp of folderOccs[folder]||[]){
+        const d=Math.abs(fp-flp);if(d<min) min=d;
+      }
+    return min;
+  }
+
+  // TC2 .pro binary tree metadata constants:
+  //   folder→first child gap: folder_name.length + 20 bytes
+  //   sibling→sibling gap:    prev_name.length + 24 bytes
+  const ENTRY_GAP=20;
+  const SIBLING_GAP=24;
+  const TOL=3;
+
+  const folderMap={'__root__':[]};
+  const assigned=new Set();
+
+  for(const folder of knownFolders){
+    if(!folderOccs[folder].length) continue;
+    const firstExpected=folder.length+ENTRY_GAP;
+
+    // Candidates sorted by distance to this folder
+    const cands=fileNames
+      .filter(f=>!assigned.has(f))
+      .map(f=>({name:f,dist:mDist(f,folder)}))
+      .filter(f=>f.dist<Infinity)
+      .sort((a,b)=>a.dist-b.dist);
+
+    const children=[];
+    let expected=firstExpected;
+    for(const c of cands){
+      if(Math.abs(c.dist-expected)<=TOL){
+        children.push(c);
+        assigned.add(c.name);
+        expected=c.dist+c.name.length+SIBLING_GAP;
       }
     }
-    if(!placed) folderMap['__root__'].push(name);
-  });
+    if(children.length) folderMap[folder]=children.map(c=>c.name);
+  }
+
+  // Unassigned files → root
+  for(const name of fileNames){
+    if(!assigned.has(name)) folderMap['__root__'].push(name);
+  }
+
+  // Remove empty folders
+  for(const key of Object.keys(folderMap)){
+    if(key!=='__root__'&&(!folderMap[key]||!folderMap[key].length)) delete folderMap[key];
+  }
 
   return{
     'POUs':folderMap,
