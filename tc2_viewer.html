@@ -124,11 +124,11 @@ header{display:flex;align-items:center;padding:8px 14px;background:var(--surface
     </div>
     <span class="search-count" id="searchCount"></span>
     <div class="search-nav">
-      <button onclick="prevMatch()" title="前へ (Shift+F2)">▲</button>
+      <button onclick="prevMatch()" title="前へ (Shift+F3)">▲</button>
       <button onclick="nextMatch()" title="次へ (F3)">▼</button>
     </div>
   </div>
-  <span class="search-hint">ダブルクリック:単語選択　F2:検索取込　F3:次へ　Shift+F2:前へ</span>
+  <span class="search-hint">ダブルクリック:単語選択　F2:検索取込　F3:次へ　Shift+F3:前へ</span>
 </header>
 
 <div class="tab-bar" id="tabBar"></div>
@@ -834,7 +834,6 @@ function onTextareaKey(e){
 document.addEventListener('keydown',e=>{
   if(e.key==='F2'){
     e.preventDefault();
-    if(e.shiftKey){prevMatch();return;}
 
     // Get current selection from textarea
     const ta=document.getElementById('codeTextarea');
@@ -859,7 +858,7 @@ document.addEventListener('keydown',e=>{
   }
   if(e.key==='F3'){
     e.preventDefault();
-    nextMatch();
+    if(e.shiftKey){prevMatch();}else{nextMatch();}
   }
 });
 
