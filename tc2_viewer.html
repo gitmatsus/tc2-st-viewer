@@ -94,9 +94,12 @@ header{display:flex;align-items:center;padding:8px 14px;background:var(--surface
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:var(--text-dim)}
 
-#emptyState{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-dim);font-family:'JetBrains Mono',monospace;gap:14px;background:var(--surface2);z-index:5;pointer-events:none}
-.empty-icon{font-size:52px;opacity:.25}
-.empty-title{font-size:14px;font-weight:600;letter-spacing:.06em;color:var(--text)}
+#emptyState{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-dim);font-family:'JetBrains Mono',monospace;gap:14px;background:var(--surface2);z-index:5;transition:background .2s,border-color .2s}
+#emptyState.drag-over{background:var(--surface);outline:2px dashed var(--accent);outline-offset:-8px}
+#emptyState.drag-over .empty-icon{opacity:.6}
+#emptyState.drag-over .empty-title{color:var(--accent)}
+.empty-icon{font-size:52px;opacity:.25;transition:opacity .2s}
+.empty-title{font-size:14px;font-weight:600;letter-spacing:.06em;color:var(--text);transition:color .2s}
 .empty-sub{font-size:11px;opacity:.6}
 </style>
 </head>
@@ -387,7 +390,11 @@ function openTab(name){
 // ============================================================
 function loadProFile(event){
   const file=event.target.files[0];
-  if(!file) return;
+  if(file) loadFileFromBlob(file);
+  event.target.value='';
+}
+
+function loadFileFromBlob(file){
   const reader=new FileReader();
   reader.onload=e=>{
     try{
@@ -403,10 +410,33 @@ function loadProFile(event){
       showToast('📂 '+file.name+' を読み込みました');
     }catch(err){showToast('⚠️ 読み込みエラー: '+err.message);}
   };
-  // Read as ArrayBuffer for proper CP932 decoding
   reader.readAsArrayBuffer(file);
-  event.target.value='';
 }
+
+// Drag & Drop support
+document.addEventListener('DOMContentLoaded',()=>{
+  const dropZone=document.getElementById('editorScroll');
+  const emptyEl=document.getElementById('emptyState');
+  dropZone.addEventListener('dragover',e=>{
+    e.preventDefault();e.stopPropagation();
+    e.dataTransfer.dropEffect='copy';
+    if(emptyEl) emptyEl.classList.add('drag-over');
+  });
+  dropZone.addEventListener('dragleave',e=>{
+    e.preventDefault();e.stopPropagation();
+    if(emptyEl) emptyEl.classList.remove('drag-over');
+  });
+  dropZone.addEventListener('drop',e=>{
+    e.preventDefault();e.stopPropagation();
+    if(emptyEl) emptyEl.classList.remove('drag-over');
+    const file=e.dataTransfer.files[0];
+    if(file&&/\.(pro|st|exp)$/i.test(file.name)){
+      loadFileFromBlob(file);
+    }else if(file){
+      showToast('⚠️ .pro / .st / .exp ファイルのみ対応しています');
+    }
+  });
+});
 
 function parseProFile(arrayBuffer, filename){
   // Pre-process: fix END_VAR → code body boundary in binary
@@ -453,15 +483,42 @@ function parseProFile(arrayBuffer, filename){
     pous[p.name]=cleanBlock(text.slice(p.pos,end));
   });
 
-  // Global_Variables CONSTANT
-  const gvIdx=text.indexOf('VAR_GLOBAL CONSTANT');
-  if(gvIdx>=0){
-    const cmtIdx=text.lastIndexOf('(*',gvIdx);
-    const start=(cmtIdx>=0&&gvIdx-cmtIdx<120)?cmtIdx:gvIdx;
-    const chunk=text.slice(start,start+5000);
+  // Global_Variables: extract all VAR_GLOBAL sections (CONSTANT, standalone, PERSISTENT)
+  const gvSections=[];
+  const gvRe=/VAR_GLOBAL(?:\s+(?:CONSTANT|PERSISTENT))?/g;
+  let gm;
+  while((gm=gvRe.exec(text))!==null){
+    const secStart=gm.index;
+    const afterKeyword=secStart+gm[0].length;
+    const chunk=text.slice(secStart,secStart+8000);
     const ev=chunk.indexOf('END_VAR');
-    if(ev>=0) pous['Global_Variables']=chunk.slice(0,ev+7).trim();
+    if(ev<0) continue;
+    const section=chunk.slice(0,ev+7).trim();
+    // Skip empty or auto-generated sections (< 40 chars content or "DO NOT CHANGE")
+    if(section.length<40||/DO NOT CHANGE/i.test(section)) continue;
+    // Include preceding comment if present
+    const cmtIdx=text.lastIndexOf('(*',secStart);
+    const prefix=(cmtIdx>=0&&secStart-cmtIdx<120)?text.slice(cmtIdx,secStart):'';
+    gvSections.push((prefix+section).trim());
   }
+  if(gvSections.length) pous['Global_Variables']=gvSections.join('\n\n');
+
+  // TwinCAT_Configuration: extract non-empty VAR_CONFIG sections
+  const vcSections=[];
+  const vcRe=/VAR_CONFIG/g;
+  let vm;
+  while((vm=vcRe.exec(text))!==null){
+    const chunk=text.slice(vm.index,vm.index+4000);
+    const ev=chunk.indexOf('END_VAR');
+    if(ev<0) continue;
+    const section=chunk.slice(0,ev+7).trim();
+    if(section.length<40) continue;
+    // Include preceding comment
+    const cmtIdx=text.lastIndexOf('(*',vm.index);
+    const prefix=(cmtIdx>=0&&vm.index-cmtIdx<120)?text.slice(cmtIdx,vm.index):'';
+    vcSections.push((prefix+section).trim());
+  }
+  if(vcSections.length) pous['TwinCAT_Configuration']=vcSections.join('\n\n');
 
   const tree=buildTree(pous,arrayBuffer);
   return{tree,pous};
@@ -576,7 +633,12 @@ function buildTree(pous,arrayBuffer){
 
   return{
     'POUs':folderMap,
-    'Resources':pous['Global_Variables']?{'Global Variables':['Global_Variables']}:{}
+    'Resources':(()=>{
+      const r={};
+      if(pous['Global_Variables']) r['Global Variables']=['Global_Variables'];
+      if(pous['TwinCAT_Configuration']) r['TwinCAT_Configuration']=['TwinCAT_Configuration'];
+      return r;
+    })()
   };
 }
 
