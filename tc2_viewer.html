@@ -68,7 +68,7 @@ header{display:flex;align-items:center;padding:8px 14px;background:var(--surface
 .line-num.cursor-line{opacity:1;color:var(--accent)}
 
 .editor-scroll{flex:1;overflow:auto;position:relative}
-.highlight-layer{position:absolute;top:0;left:0;padding:16px;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:var(--line-h);white-space:pre;pointer-events:none;min-width:100%;word-break:normal;overflow-wrap:normal}
+.highlight-layer{position:absolute;top:0;left:0;padding:16px;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:var(--line-h);white-space:pre;pointer-events:none;min-width:100%;word-break:normal;overflow-wrap:normal;tab-size:2}
 #codeTextarea{position:absolute;top:0;left:0;width:100%;height:100%;padding:16px;background:transparent;color:transparent;caret-color:var(--accent);border:none;outline:none;resize:none;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:var(--line-h);white-space:pre;overflow:hidden;tab-size:2;cursor:text;-webkit-user-select:text;user-select:text}
 #codeTextarea::selection{background:rgba(0,217,255,0.20)}
 
@@ -173,7 +173,7 @@ const TYPE_RE=new RegExp('\\b('+TC2_TYPES.join('|')+')\\b','g');
 const TC2F_RE=/\b(LEN|LEFT|RIGHT|MID|CONCAT|INSERT|DELETE|REPLACE|FIND|ABS|SQRT|SIN|COS|TAN|ASIN|ACOS|ATAN|EXP|LOG|LN|MAX|MIN|LIMIT|SEL|MUX|SHL|SHR|ROL|ROR|INT_TO_REAL|REAL_TO_INT|DINT_TO_REAL|REAL_TO_DINT|BOOL_TO_INT|INT_TO_STRING|DINT_TO_STRING|REAL_TO_STRING|WORD_TO_DWORD|MEMSET|MEMCPY|ADR)\b/g;
 const BOOL_RE=/\b(TRUE|FALSE)\b/g;
 const NUM_RE =/\b(\d+\.?\d*(?:[eE][+-]?\d+)?|16#[0-9A-Fa-f]+|2#[01]+|T#[\dSMHD_]+)\b/g;
-const FUNC_RE=/\b([A-Za-z_][A-Za-z0-9_]*)\s*(?=\()/g;
+const FUNC_RE=/\b([A-Za-z_][A-Za-z0-9_]*)\s*\(/g;
 
 // ============================================================
 // State
@@ -406,15 +406,31 @@ function loadProFile(event){
 }
 
 function parseProFile(arrayBuffer, filename){
+  // Pre-process: fix END_VAR → code body boundary in binary
+  // Binary format: END_VAR [optional CRLF] 0x12 [4-byte LE length] [code body]
+  // Replace the 0x12 marker + 4-byte length field with CRLF so decoder produces clean text
+  const textBytes=new Uint8Array(arrayBuffer).slice();
+  const EV=[0x45,0x4E,0x44,0x5F,0x56,0x41,0x52]; // "END_VAR"
+  for(let i=0;i<textBytes.length-12;i++){
+    let ok=true;
+    for(let j=0;j<7;j++){if(textBytes[i+j]!==EV[j]){ok=false;break;}}
+    if(!ok) continue;
+    let p=i+7;
+    if(p+1<textBytes.length&&textBytes[p]===0x0D&&textBytes[p+1]===0x0A) p+=2;
+    if(p+4<textBytes.length&&textBytes[p]===0x12){
+      // Replace 0x12 + 4-byte length with CRLF + 3 newlines (clean separator)
+      textBytes[p]=0x0D;textBytes[p+1]=0x0A;
+      textBytes[p+2]=0x0A;textBytes[p+3]=0x0A;textBytes[p+4]=0x0A;
+    }
+  }
   // Decode with CP932 (Shift-JIS) using TextDecoder with fallback
   let text;
   try{
-    // Try CP932/Shift-JIS first
     const decoder=new TextDecoder('shift-jis');
-    text=decoder.decode(new Uint8Array(arrayBuffer));
+    text=decoder.decode(textBytes);
   }catch(e){
     const decoder=new TextDecoder('utf-8',{fatal:false});
-    text=decoder.decode(new Uint8Array(arrayBuffer));
+    text=decoder.decode(textBytes);
   }
 
   // Find all PROGRAM / FUNCTION_BLOCK / FUNCTION blocks
@@ -444,7 +460,7 @@ function parseProFile(arrayBuffer, filename){
     if(ev>=0) pous['Global_Variables']=chunk.slice(0,ev+7).trim();
   }
 
-  const tree=buildTree(pous,text);
+  const tree=buildTree(pous,arrayBuffer);
   return{tree,pous};
 }
 
@@ -455,7 +471,7 @@ function cleanBlock(chunk){
   let inImpl=false; // 実装部（IF/FOR等）に入ったか
 
   // バイナリ行から抽出できる構造的STパターン
-  const ST_IN_BIN=/\b(?:END_VAR|END_IF|END_FOR|END_CASE|END_WHILE|END_REPEAT|END_PROGRAM|END_FUNCTION(?:_BLOCK)?|IF\s+\w|FOR\s+\w|WHILE\s+\w|CASE\s+\w)\b/;
+  const ST_IN_BIN=/\b(?:END_VAR|END_IF|END_FOR|END_CASE|END_WHILE|END_REPEAT|END_PROGRAM|END_FUNCTION(?:_BLOCK)?)\b|\b(?:IF|FOR|WHILE|CASE)\s+\w/;
 
   for(const line of lines){
     const chars=[...line];
@@ -476,8 +492,8 @@ function cleanBlock(chunk){
       }
     }else{
       binRun=0;
-      // 行頭の非ASCIIバイナリノイズを除去（ｾ1\t... → \t...）
-      const clean=line.replace(/^[^\x00-\x7F][\x20-\x7E]*(?=\t)/,'');
+      // 行頭の非ASCIIバイナリノイズを除去（ｾ1\t... → \t...）短い接頭辞のみ対象
+      const clean=line.replace(/^[^\x00-\x7F][\x20-\x7E]{0,3}(?=\t)/,'');
       out.push(clean);
       // クリーン行から実装部開始を検出
       if(!inImpl&&(
@@ -486,97 +502,73 @@ function cleanBlock(chunk){
       )) inImpl=true;
     }
   }
-  return out.join('\n').trim();
+  return out.join('\n').replace(/\n{3,}/g,'\n\n').trim();
 }
 
-function buildTree(pous,text){
-  const knownFolders=['Function','ST_ERROR','ST_INPUT','ST_OUTPUT','ST_PROG','ST_ALARM'];
+function buildTree(pous,arrayBuffer){
   const fileNames=Object.keys(pous).filter(k=>k!=='Global_Variables');
-  const isAlnum=c=>(c>=48&&c<=57)||(c>=65&&c<=90)||(c>=97&&c<=122)||c===95;
+  const fileSet=new Set(fileNames);
 
-  // Collect all standalone positions of folder names
-  const folderOccs={};
-  for(const folder of knownFolders){
-    folderOccs[folder]=[];
-    let idx=0;
-    while(true){
-      const pos=text.indexOf(folder,idx);
-      if(pos<0) break;
-      idx=pos+folder.length;
-      if(pos>0&&isAlnum(text.charCodeAt(pos-1))) continue;
-      if(pos+folder.length<text.length&&isAlnum(text.charCodeAt(pos+folder.length))) continue;
-      folderOccs[folder].push(pos);
+  // Search for POUs magic: 04 00 00 00 "POUs"
+  const bytes=new Uint8Array(arrayBuffer);
+  let treeStart=-1;
+  for(let i=bytes.length-800;i>=0;i--){
+    if(bytes[i]===0x04&&bytes[i+1]===0x00&&bytes[i+2]===0x00&&bytes[i+3]===0x00
+      &&bytes[i+4]===0x50&&bytes[i+5]===0x4F&&bytes[i+6]===0x55&&bytes[i+7]===0x73){
+      treeStart=i;break;
     }
   }
 
-  // Collect all standalone positions of file names
-  const fileOccs={};
-  for(const name of fileNames){
-    fileOccs[name]=[];
-    let idx=0;
-    while(true){
-      const pos=text.indexOf(name,idx);
-      if(pos<0) break;
-      idx=pos+name.length;
-      if(pos>0&&isAlnum(text.charCodeAt(pos-1))) continue;
-      if(pos+name.length<text.length&&isAlnum(text.charCodeAt(pos+name.length))) continue;
-      const before=text.slice(Math.max(0,pos-40),pos);
-      if(/\b(?:PROGRAM|FUNCTION_BLOCK|FUNCTION)\s+$/.test(before)) continue;
-      fileOccs[name].push(pos);
-    }
+  if(treeStart<0){
+    // Fallback: all files at root
+    const folderMap={'__root__':fileNames.slice()};
+    return{'POUs':folderMap,'Resources':pous['Global_Variables']?{'Global Variables':['Global_Variables']}:{}};
   }
 
-  // Min distance between a file and a folder (across all occurrences)
-  function mDist(fileName,folder){
-    let min=Infinity;
-    for(const fp of fileOccs[fileName]||[])
-      for(const flp of folderOccs[folder]||[]){
-        const d=Math.abs(fp-flp);if(d<min) min=d;
+  const dv=new DataView(arrayBuffer);
+  const dec=new TextDecoder('shift-jis');
+
+  function parseNode(pos){
+    const nameLen=dv.getUint32(pos,true);pos+=4;
+    const name=dec.decode(new Uint8Array(arrayBuffer,pos,nameLen));pos+=nameLen;
+    const childCount=dv.getUint16(pos,true);pos+=2;
+    if(childCount>0){
+      pos+=14; // folder metadata
+      const children=[];
+      for(let i=0;i<childCount;i++){
+        const r=parseNode(pos);
+        children.push(r.node);
+        pos=r.pos;
       }
-    return min;
+      return{node:{name,children},pos};
+    }else{
+      const marker=dv.getInt32(pos+4,true);
+      pos+=(marker===-1)?22:18;
+      return{node:{name,children:[]},pos};
+    }
   }
 
-  // TC2 .pro binary tree metadata constants:
-  //   folder→first child gap: folder_name.length + 20 bytes
-  //   sibling→sibling gap:    prev_name.length + 24 bytes
-  const ENTRY_GAP=20;
-  const SIBLING_GAP=24;
-  const TOL=3;
-
+  // Parse POUs section
   const folderMap={'__root__':[]};
-  const assigned=new Set();
-
-  for(const folder of knownFolders){
-    if(!folderOccs[folder].length) continue;
-    const firstExpected=folder.length+ENTRY_GAP;
-
-    // Candidates sorted by distance to this folder
-    const cands=fileNames
-      .filter(f=>!assigned.has(f))
-      .map(f=>({name:f,dist:mDist(f,folder)}))
-      .filter(f=>f.dist<Infinity)
-      .sort((a,b)=>a.dist-b.dist);
-
-    const children=[];
-    let expected=firstExpected;
-    for(const c of cands){
-      if(Math.abs(c.dist-expected)<=TOL){
-        children.push(c);
-        assigned.add(c.name);
-        expected=c.dist+c.name.length+SIBLING_GAP;
+  try{
+    const r=parseNode(treeStart);
+    const pousNode=r.node; // {name:'POUs', children:[...]}
+    for(const child of pousNode.children){
+      if(child.children.length>0){
+        // Folder
+        const files=child.children.map(c=>c.name).filter(n=>fileSet.has(n));
+        if(files.length) folderMap[child.name]=files;
+      }else if(fileSet.has(child.name)){
+        // Root-level POU
+        folderMap['__root__'].push(child.name);
       }
     }
-    if(children.length) folderMap[folder]=children.map(c=>c.name);
-  }
-
-  // Unassigned files → root
-  for(const name of fileNames){
-    if(!assigned.has(name)) folderMap['__root__'].push(name);
-  }
-
-  // Remove empty folders
-  for(const key of Object.keys(folderMap)){
-    if(key!=='__root__'&&(!folderMap[key]||!folderMap[key].length)) delete folderMap[key];
+  }catch(e){
+    // Parse error fallback
+    fileNames.forEach(n=>{
+      if(!Object.values(folderMap).some(arr=>arr.includes(n)))
+        folderMap['__root__'].push(n);
+    });
   }
 
   return{
