@@ -68,7 +68,8 @@ header{display:flex;align-items:center;padding:8px 14px;background:var(--surface
 .line-num.cursor-line{opacity:1;color:var(--accent)}
 
 .editor-scroll{flex:1;overflow:auto;position:relative}
-.highlight-layer{position:absolute;top:0;left:0;padding:16px;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:var(--line-h);white-space:pre;pointer-events:none;min-width:100%;word-break:normal;overflow-wrap:normal;tab-size:2}
+.code-content{position:relative;min-height:100%}
+.highlight-layer{padding:16px;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:var(--line-h);white-space:pre;pointer-events:none;min-width:100%;word-break:normal;overflow-wrap:normal;tab-size:2}
 #codeTextarea{position:absolute;top:0;left:0;width:100%;height:100%;padding:16px;background:transparent;color:transparent;caret-color:var(--accent);border:none;outline:none;resize:none;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:var(--line-h);white-space:pre;overflow:hidden;tab-size:2;cursor:text;-webkit-user-select:text;user-select:text}
 #codeTextarea::selection{background:rgba(0,217,255,0.20)}
 
@@ -135,13 +136,15 @@ header{display:flex;align-items:center;padding:8px 14px;background:var(--surface
     <div class="editor-wrapper">
       <div class="line-numbers" id="lineNumbers"></div>
       <div class="editor-scroll" id="editorScroll" onscroll="syncScroll()">
-        <div class="highlight-layer" id="highlightLayer"></div>
+        <div class="code-content">
+          <div class="highlight-layer" id="highlightLayer"></div>
+          <textarea id="codeTextarea" readonly spellcheck="false" autocomplete="off"
+            ondblclick="onDblClick(event)"
+            onmouseup="onMouseUp(event)"
+            onclick="onEditorClick(event)"
+            onkeydown="onTextareaKey(event)"></textarea>
+        </div>
         <div id="emptyState"><div class="empty-icon">📂</div><div class="empty-title">ファイルを開いてください</div><div class="empty-sub">.pro / .st / .exp ファイルに対応</div></div>
-        <textarea id="codeTextarea" readonly spellcheck="false" autocomplete="off"
-          ondblclick="onDblClick(event)"
-          onmouseup="onMouseUp(event)"
-          onclick="onEditorClick(event)"
-          onkeydown="onTextareaKey(event)"></textarea>
       </div>
     </div>
   </div>
@@ -803,8 +806,8 @@ document.addEventListener('keydown',e=>{
 // ============================================================
 function syncScroll(){
   const s=document.getElementById('editorScroll');
-  document.getElementById('highlightLayer').style.transform=
-    `translate(-${s.scrollLeft}px,-${s.scrollTop}px)`;
+  // ハイライト層・テキストエリアは自然スクロール（code-content内で同期）
+  // 行番号のみ手動同期
   document.getElementById('lineNumbers').scrollTop=s.scrollTop;
 }
 
