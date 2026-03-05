@@ -374,14 +374,22 @@ function openTab(name){
   activeTabId=name;
   cursorLineIdx=0;
   dblWord='';
-  buildTabs();buildSidebar();
-  renderCode(name);
-  document.getElementById('editorScroll').scrollTop=0;
-  document.getElementById('statusSel').textContent='';
-  // If search active, jump to first match in this tab
+  // Update searchCurIdx BEFORE render so highlight shows correct current match
   if(searchMatches.length>0){
     const idx=searchMatches.findIndex(m=>m.tabId===name);
-    if(idx>=0){ searchCurIdx=idx; updateCount(); scrollToMatch(); }
+    if(idx>=0){
+      searchCurIdx=idx;
+      cursorLineIdx=searchMatches[idx].lineIdx;
+    }
+  }
+  buildTabs();buildSidebar();
+  renderCode(name);
+  document.getElementById('statusSel').textContent='';
+  if(searchMatches.length>0&&searchCurIdx>=0){
+    updateCount();
+    requestAnimationFrame(()=>scrollToMatch());
+  }else{
+    document.getElementById('editorScroll').scrollTop=0;
   }
 }
 
@@ -728,14 +736,41 @@ function updateCount(){
   el.style.color='var(--accent)';
 }
 
+function needReanchor(){
+  if(searchCurIdx<0) return true;
+  const cur=searchMatches[searchCurIdx];
+  return cur.tabId!==activeTabId||Math.abs(cur.lineIdx-cursorLineIdx)>1;
+}
+
 function nextMatch(){
   if(!searchMatches.length) return;
+  if(needReanchor()){
+    // Find first match at/after cursor in active tab
+    const ni=searchMatches.findIndex(m=>m.tabId===activeTabId&&m.lineIdx>=cursorLineIdx);
+    if(ni>=0){searchCurIdx=ni;jumpTo(searchCurIdx);return;}
+    // No match after cursor in this tab — find first match in next tab (wrap)
+    const ti=searchMatches.findIndex(m=>m.tabId===activeTabId);
+    searchCurIdx=ti>=0?(ti+searchMatches.filter(m=>m.tabId===activeTabId).length)%searchMatches.length:0;
+    jumpTo(searchCurIdx);return;
+  }
   searchCurIdx=(searchCurIdx+1)%searchMatches.length;
   jumpTo(searchCurIdx);
 }
 
 function prevMatch(){
   if(!searchMatches.length) return;
+  if(needReanchor()){
+    // Find last match at/before cursor in active tab
+    let ni=-1;
+    for(let i=searchMatches.length-1;i>=0;i--){
+      if(searchMatches[i].tabId===activeTabId&&searchMatches[i].lineIdx<=cursorLineIdx){ni=i;break;}
+    }
+    if(ni>=0){searchCurIdx=ni;jumpTo(searchCurIdx);return;}
+    // No match before cursor in this tab — find last match in prev tab (wrap)
+    const ti=searchMatches.findIndex(m=>m.tabId===activeTabId);
+    searchCurIdx=ti>=0?(ti-1+searchMatches.length)%searchMatches.length:searchMatches.length-1;
+    jumpTo(searchCurIdx);return;
+  }
   searchCurIdx=(searchCurIdx-1+searchMatches.length)%searchMatches.length;
   jumpTo(searchCurIdx);
 }
@@ -744,6 +779,7 @@ function jumpTo(idx){
   updateCount();
   const m=searchMatches[idx];
   if(!m) return;
+  cursorLineIdx=m.lineIdx;
   if(m.tabId!==activeTabId){
     activeTabId=m.tabId;
     buildTabs();buildSidebar();
