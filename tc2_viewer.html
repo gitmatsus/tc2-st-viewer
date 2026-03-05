@@ -206,7 +206,80 @@ function hlSeg(s){
     .replace(FUNC_RE,(_,fn)=>`<span class="func">${fn}</span>(`);
 }
 
-function hlLine(line){
+// Build multi-line comment map: for each line, returns 'full' | 'start' | 'mid' | 'end' | null
+function buildCommentMap(code){
+  const lines=code.split('\n');
+  const map=new Array(lines.length).fill(null);
+  let inComment=false, startLine=-1;
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i];
+    if(inComment){
+      const endIdx=line.indexOf('*)');
+      if(endIdx>=0){
+        inComment=false;
+        if(startLine===i) map[i]='full';
+        else map[i]='end';
+      }else{
+        map[i]='mid';
+      }
+    }
+    if(!inComment){
+      // Check for (* that doesn't close on same line (scan for unmatched opens)
+      let searchPos=0;
+      while(searchPos<line.length){
+        const openIdx=line.indexOf('(*',searchPos);
+        if(openIdx<0) break;
+        const closeIdx=line.indexOf('*)',openIdx+2);
+        if(closeIdx>=0){
+          searchPos=closeIdx+2; // matched on same line, keep scanning
+        }else{
+          // Unmatched open — multi-line comment starts here
+          inComment=true;
+          startLine=i;
+          map[i]='start';
+          break;
+        }
+      }
+    }
+  }
+  return map;
+}
+
+function hlLine(line, commentState){
+  // If entire line is inside a multi-line comment
+  if(commentState==='mid') return `<span class="comment">${esc(line)}</span>`;
+
+  // 'end': line ends a multi-line comment at *)
+  if(commentState==='end'){
+    const endIdx=line.indexOf('*)');
+    const cmPart=line.slice(0,endIdx+2);
+    const rest=line.slice(endIdx+2);
+    return `<span class="comment">${esc(cmPart)}</span>`+(rest?hlLine(rest,null):'');
+  }
+
+  // 'start': line starts a multi-line comment from (* to end of line
+  if(commentState==='start'){
+    // Find the unmatched (* (skip matched pairs)
+    let searchPos=0, unmatchedIdx=-1;
+    while(searchPos<line.length){
+      const openIdx=line.indexOf('(*',searchPos);
+      if(openIdx<0) break;
+      const closeIdx=line.indexOf('*)',openIdx+2);
+      if(closeIdx>=0){
+        searchPos=closeIdx+2;
+      }else{
+        unmatchedIdx=openIdx;
+        break;
+      }
+    }
+    if(unmatchedIdx>=0){
+      const before=line.slice(0,unmatchedIdx);
+      const cmPart=line.slice(unmatchedIdx);
+      return (before?hlLine(before,null):'')+`<span class="comment">${esc(cmPart)}</span>`;
+    }
+  }
+
+  // Normal line (or 'full' — handled by existing inline regex)
   const pr=[];
   const cmRe=/\(\*[\s\S]*?\*\)|\/\/.*/g;
   const stRe=/'[^']*'/g;
@@ -235,6 +308,7 @@ function hlLine(line){
 function renderHighlight(tabId){
   const code=PROJECT_DATA.pous[tabId]||'';
   const lines=code.split('\n');
+  const cmtMap=buildCommentMap(code);
 
   // Search match map
   const lineMap=new Map();
@@ -260,7 +334,7 @@ function renderHighlight(tabId){
   const html=lines.map((line,i)=>{
     const marks=lineMap.get(i)||[];
     const wmarks=wordMap.get(i)||[];
-    if(!marks.length&&!wmarks.length) return hlLine(line);
+    if(!marks.length&&!wmarks.length) return hlLine(line,cmtMap[i]);
 
     // Merge: search > word
     const all=[
@@ -277,7 +351,7 @@ function renderHighlight(tabId){
     }
     if(pos<line.length) parts.push({text:line.slice(pos),type:'plain'});
     return parts.map(p=>{
-      if(p.type==='plain')  return hlLine(p.text);
+      if(p.type==='plain')  return hlLine(p.text,cmtMap[i]);
       if(p.type==='cur')    return `<span class="search-cur-hl">${esc(p.text)}</span>`;
       if(p.type==='search') return `<span class="search-hl">${esc(p.text)}</span>`;
       if(p.type==='word')   return `<span class="word-sel">${esc(p.text)}</span>`;
@@ -498,44 +572,11 @@ function parseProFile(arrayBuffer, filename){
     pous[p.name]=cleanBlock(text.slice(p.pos,end));
   });
 
-  // Global_Variables: extract all VAR_GLOBAL sections (CONSTANT, standalone, PERSISTENT)
-  const gvSections=[];
-  const gvRe=/VAR_GLOBAL(?:\s+(?:CONSTANT|PERSISTENT))?/g;
-  let gm;
-  while((gm=gvRe.exec(text))!==null){
-    const secStart=gm.index;
-    const afterKeyword=secStart+gm[0].length;
-    const chunk=text.slice(secStart,secStart+8000);
-    const ev=chunk.indexOf('END_VAR');
-    if(ev<0) continue;
-    const section=chunk.slice(0,ev+7).trim();
-    // Skip empty or auto-generated sections (< 40 chars content or "DO NOT CHANGE")
-    if(section.length<40||/DO NOT CHANGE/i.test(section)) continue;
-    // Include preceding comment if present
-    const cmtIdx=text.lastIndexOf('(*',secStart);
-    const prefix=(cmtIdx>=0&&secStart-cmtIdx<120)?text.slice(cmtIdx,secStart):'';
-    gvSections.push((prefix+section).trim());
-  }
-  if(gvSections.length) pous['Global_Variables']=gvSections.join('\n\n');
+  // Parse binary tree to get Global Variables children names
+  const treeInfo=parseProjectTree(arrayBuffer);
+  extractResourceContent(text,pous,treeInfo);
 
-  // TwinCAT_Configuration: extract non-empty VAR_CONFIG sections
-  const vcSections=[];
-  const vcRe=/VAR_CONFIG/g;
-  let vm;
-  while((vm=vcRe.exec(text))!==null){
-    const chunk=text.slice(vm.index,vm.index+4000);
-    const ev=chunk.indexOf('END_VAR');
-    if(ev<0) continue;
-    const section=chunk.slice(0,ev+7).trim();
-    if(section.length<40) continue;
-    // Include preceding comment
-    const cmtIdx=text.lastIndexOf('(*',vm.index);
-    const prefix=(cmtIdx>=0&&vm.index-cmtIdx<120)?text.slice(cmtIdx,vm.index):'';
-    vcSections.push((prefix+section).trim());
-  }
-  if(vcSections.length) pous['TwinCAT_Configuration']=vcSections.join('\n\n');
-
-  const tree=buildTree(pous,arrayBuffer);
+  const tree=buildTree(pous,treeInfo);
   return{tree,pous};
 }
 
@@ -577,14 +618,26 @@ function cleanBlock(chunk){
       )) inImpl=true;
     }
   }
-  return out.join('\n').replace(/\n{3,}/g,'\n\n').trim();
+  let result=out.join('\n').replace(/\n{3,}/g,'\n\n').trim();
+  // Trim trailing binary garbage after final END_ keyword
+  // POU code ends with END_PROGRAM/END_FUNCTION_BLOCK/END_FUNCTION or END_IF/END_FOR/END_CASE
+  const endRe=/\b(END_(?:PROGRAM|FUNCTION_BLOCK|FUNCTION|IF|FOR|CASE|WHILE|REPEAT))\b(?![\s\S]*\b(?:END_(?:PROGRAM|FUNCTION_BLOCK|FUNCTION|IF|FOR|CASE|WHILE|REPEAT))\b)/;
+  const em=endRe.exec(result);
+  if(em){
+    const cutPos=em.index+em[1].length;
+    const tail=result.slice(cutPos);
+    // If there's non-whitespace garbage after the last END_ keyword, trim it
+    if(tail.trim().length>0&&!/^\s*$/.test(tail)&&!/^\s*\(\*/.test(tail)){
+      result=result.slice(0,cutPos);
+    }
+  }
+  return result;
 }
 
-function buildTree(pous,arrayBuffer){
-  const fileNames=Object.keys(pous).filter(k=>k!=='Global_Variables');
-  const fileSet=new Set(fileNames);
-
-  // Search for POUs magic: 04 00 00 00 "POUs"
+// ============================================================
+// Binary tree parsing — extract project tree from .pro binary
+// ============================================================
+function parseProjectTree(arrayBuffer){
   const bytes=new Uint8Array(arrayBuffer);
   let treeStart=-1;
   for(let i=bytes.length-800;i>=0;i--){
@@ -593,12 +646,7 @@ function buildTree(pous,arrayBuffer){
       treeStart=i;break;
     }
   }
-
-  if(treeStart<0){
-    // Fallback: all files at root
-    const folderMap={'__root__':fileNames.slice()};
-    return{'POUs':folderMap,'Resources':pous['Global_Variables']?{'Global Variables':['Global_Variables']}:{}};
-  }
+  if(treeStart<0) return null;
 
   const dv=new DataView(arrayBuffer);
   const dec=new TextDecoder('shift-jis');
@@ -608,7 +656,7 @@ function buildTree(pous,arrayBuffer){
     const name=dec.decode(new Uint8Array(arrayBuffer,pos,nameLen));pos+=nameLen;
     const childCount=dv.getUint16(pos,true);pos+=2;
     if(childCount>0){
-      pos+=14; // folder metadata
+      pos+=14;
       const children=[];
       for(let i=0;i<childCount;i++){
         const r=parseNode(pos);
@@ -623,38 +671,168 @@ function buildTree(pous,arrayBuffer){
     }
   }
 
-  // Parse POUs section
-  const folderMap={'__root__':[]};
+  const siblings=[];
   try{
-    const r=parseNode(treeStart);
-    const pousNode=r.node; // {name:'POUs', children:[...]}
-    for(const child of pousNode.children){
-      if(child.children.length>0){
-        // Folder
-        const files=child.children.map(c=>c.name).filter(n=>fileSet.has(n));
-        if(files.length) folderMap[child.name]=files;
-      }else if(fileSet.has(child.name)){
-        // Root-level POU
-        folderMap['__root__'].push(child.name);
+    let pos=treeStart;
+    for(let s=0;s<10;s++){
+      try{
+        const r=parseNode(pos);
+        siblings.push(r.node);
+        pos=r.pos;
+      }catch(e){break;}
+    }
+  }catch(e){}
+  return{treeStart,siblings};
+}
+
+// ============================================================
+// Resource content extraction — map binary tree names to text
+// ============================================================
+function extractResourceContent(text,pous,treeInfo){
+  if(!treeInfo){
+    extractResourceFallback(text,pous);
+    return;
+  }
+  const gvNode=treeInfo.siblings.find(n=>n.name==='Global Variables');
+  if(!gvNode||!gvNode.children.length){
+    extractResourceFallback(text,pous);
+    return;
+  }
+
+  const childNames=gvNode.children.map(c=>c.name);
+  // Find each child name's first occurrence in decoded text (content area)
+  const positions=[];
+  for(const name of childNames){
+    const idx=text.indexOf(name);
+    if(idx>=0) positions.push({name,pos:idx});
+  }
+  positions.sort((a,b)=>a.pos-b.pos);
+
+  if(!positions.length){
+    extractResourceFallback(text,pous);
+    return;
+  }
+
+  // For each child, extract VAR_GLOBAL/VAR_CONFIG sections between its position and the next
+  for(let i=0;i<positions.length;i++){
+    const start=positions[i].pos;
+    const end=i+1<positions.length?positions[i+1].pos:start+15000;
+    const region=text.slice(start,end);
+
+    const varRe=/VAR_(?:GLOBAL(?:\s+(?:CONSTANT|PERSISTENT))?|CONFIG)/g;
+    const sections=[];
+    let vm;
+    while((vm=varRe.exec(region))!==null){
+      const chunk=region.slice(vm.index,vm.index+8000);
+      const ev=chunk.indexOf('END_VAR');
+      if(ev<0) continue;
+      const section=chunk.slice(0,ev+7).trim();
+      if(section.length<40||/DO NOT CHANGE/i.test(section)) continue;
+      // Include preceding comment
+      const cmtIdx=region.lastIndexOf('(*',vm.index);
+      const prefix=(cmtIdx>=0&&vm.index-cmtIdx<120)?region.slice(cmtIdx,vm.index):'';
+      sections.push((prefix+section).trim());
+    }
+    if(sections.length){
+      pous[positions[i].name]=sections.join('\n\n');
+    }
+  }
+}
+
+// Fallback when binary tree is not available
+function extractResourceFallback(text,pous){
+  // Combine all VAR_GLOBAL sections into Global_Variables
+  const gvRe=/VAR_GLOBAL(?:\s+(?:CONSTANT|PERSISTENT))?/g;
+  const sections=[];
+  let gm;
+  while((gm=gvRe.exec(text))!==null){
+    const chunk=text.slice(gm.index,gm.index+8000);
+    const ev=chunk.indexOf('END_VAR');
+    if(ev<0) continue;
+    const section=chunk.slice(0,ev+7).trim();
+    if(section.length<40||/DO NOT CHANGE/i.test(section)) continue;
+    const cmtIdx=text.lastIndexOf('(*',gm.index);
+    const prefix=(cmtIdx>=0&&gm.index-cmtIdx<120)?text.slice(cmtIdx,gm.index):'';
+    sections.push((prefix+section).trim());
+  }
+  if(sections.length) pous['Global_Variables']=sections.join('\n\n');
+
+  // Extract VAR_CONFIG as TwinCAT_Configuration
+  const vcRe=/VAR_CONFIG/g;
+  const vcSections=[];
+  let vm;
+  while((vm=vcRe.exec(text))!==null){
+    const chunk=text.slice(vm.index,vm.index+4000);
+    const ev=chunk.indexOf('END_VAR');
+    if(ev<0) continue;
+    const section=chunk.slice(0,ev+7).trim();
+    if(section.length<40) continue;
+    const cmtIdx=text.lastIndexOf('(*',vm.index);
+    const prefix=(cmtIdx>=0&&vm.index-cmtIdx<120)?text.slice(cmtIdx,vm.index):'';
+    vcSections.push((prefix+section).trim());
+  }
+  if(vcSections.length) pous['TwinCAT_Configuration']=vcSections.join('\n\n');
+}
+
+// ============================================================
+// Build tree structure for sidebar display
+// ============================================================
+function buildTree(pous,treeInfo){
+  // Identify resource entries (not POUs)
+  const resKeys=new Set();
+  if(treeInfo){
+    const gvNode=treeInfo.siblings.find(n=>n.name==='Global Variables');
+    if(gvNode) gvNode.children.forEach(c=>{if(pous[c.name]) resKeys.add(c.name);});
+  }
+  // Fallback: detect resource-like keys
+  for(const k of Object.keys(pous)){
+    if(k==='Global_Variables'||k==='TwinCAT_Configuration'||k==='Variable_Configuration'||k==='TwinCAT_Import')
+      resKeys.add(k);
+  }
+
+  const fileNames=Object.keys(pous).filter(k=>!resKeys.has(k));
+  const fileSet=new Set(fileNames);
+
+  const folderMap={'__root__':[]};
+  const resourceMap={};
+
+  if(!treeInfo){
+    // No binary tree — all files at root
+    folderMap['__root__']=fileNames.slice();
+  }else{
+    const pousNode=treeInfo.siblings.find(n=>n.name==='POUs');
+    if(pousNode){
+      for(const child of pousNode.children){
+        if(child.children.length>0){
+          const files=child.children.map(c=>c.name).filter(n=>fileSet.has(n));
+          if(files.length) folderMap[child.name]=files;
+        }else if(fileSet.has(child.name)){
+          folderMap['__root__'].push(child.name);
+        }
       }
     }
-  }catch(e){
-    // Parse error fallback
+    // Catch any POU files not found in tree
     fileNames.forEach(n=>{
       if(!Object.values(folderMap).some(arr=>arr.includes(n)))
         folderMap['__root__'].push(n);
     });
   }
 
-  return{
-    'POUs':folderMap,
-    'Resources':(()=>{
-      const r={};
-      if(pous['Global_Variables']) r['Global Variables']=['Global_Variables'];
-      if(pous['TwinCAT_Configuration']) r['TwinCAT_Configuration']=['TwinCAT_Configuration'];
-      return r;
-    })()
-  };
+  // Build Resources section
+  if(treeInfo){
+    const gvNode=treeInfo.siblings.find(n=>n.name==='Global Variables');
+    if(gvNode){
+      const gvChildren=gvNode.children.map(c=>c.name).filter(n=>pous[n]);
+      if(gvChildren.length) resourceMap['Global Variables']=gvChildren;
+    }
+  }
+  // Fallback: if no tree or no children found
+  if(!resourceMap['Global Variables']){
+    const resEntries=[...resKeys].filter(k=>pous[k]);
+    if(resEntries.length) resourceMap['Global Variables']=resEntries;
+  }
+
+  return{'POUs':folderMap,'Resources':resourceMap};
 }
 
 // ============================================================
