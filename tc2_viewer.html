@@ -734,7 +734,7 @@ function extractResourceContent(text,pous,treeInfo){
       sections.push((prefix+section).trim());
     }
     if(sections.length){
-      pous[positions[i].name]=sections.join('\n\n');
+      pous[positions[i].name]=sections.join('\n\n').replace(/\r/g,'');
     }
   }
 }
@@ -755,7 +755,7 @@ function extractResourceFallback(text,pous){
     const prefix=(cmtIdx>=0&&gm.index-cmtIdx<120)?text.slice(cmtIdx,gm.index):'';
     sections.push((prefix+section).trim());
   }
-  if(sections.length) pous['Global_Variables']=sections.join('\n\n');
+  if(sections.length) pous['Global_Variables']=sections.join('\n\n').replace(/\r/g,'');
 
   // Extract VAR_CONFIG as TwinCAT_Configuration
   const vcRe=/VAR_CONFIG/g;
@@ -771,7 +771,7 @@ function extractResourceFallback(text,pous){
     const prefix=(cmtIdx>=0&&vm.index-cmtIdx<120)?text.slice(cmtIdx,vm.index):'';
     vcSections.push((prefix+section).trim());
   }
-  if(vcSections.length) pous['TwinCAT_Configuration']=vcSections.join('\n\n');
+  if(vcSections.length) pous['TwinCAT_Configuration']=vcSections.join('\n\n').replace(/\r/g,'');
 }
 
 // ============================================================
