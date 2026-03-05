@@ -456,6 +456,13 @@ function parseProFile(arrayBuffer, filename){
       textBytes[p+2]=0x0A;textBytes[p+3]=0x0A;textBytes[p+4]=0x0A;
     }
   }
+  // Fix lone LF inside comments: 0x0A 0x20 0x2A 0x29 ("\n *)") → 0x20 0x2A 0x29 0x0D (" *)\r")
+  // TwinCAT 2 binary sometimes inserts a bare LF before " *)" causing comments to split across lines
+  for(let i=0;i<textBytes.length-3;i++){
+    if(textBytes[i]===0x0A&&textBytes[i+1]===0x20&&textBytes[i+2]===0x2A&&textBytes[i+3]===0x29){
+      textBytes[i]=0x20;textBytes[i+1]=0x2A;textBytes[i+2]=0x29;textBytes[i+3]=0x20;
+    }
+  }
   // Decode with CP932 (Shift-JIS) using TextDecoder with fallback
   let text;
   try{
