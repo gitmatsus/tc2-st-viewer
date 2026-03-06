@@ -347,11 +347,26 @@ function splitPouContent(code){
   for(let i=lines.length-1;i>=0;i--){
     if(/\bEND_VAR\b/.test(lines[i])){lastEndVar=i;break;}
   }
-  if(lastEndVar<0) return{decl:code,impl:'',splitLine:lines.length};
-  const splitLine=lastEndVar+1;
-  const decl=lines.slice(0,splitLine).join('\n');
-  const impl=lines.slice(splitLine).join('\n');
-  return{decl,impl:impl.replace(/^\n+/,''),splitLine};
+  let splitAt;
+  if(lastEndVar>=0){
+    splitAt=lastEndVar+1;
+  }else{
+    // No END_VAR: split after PROGRAM/FUNCTION_BLOCK/FUNCTION header line
+    const headerIdx=lines.findIndex(l=>/^\s*(PROGRAM|FUNCTION_BLOCK|FUNCTION)\b/.test(l));
+    if(headerIdx>=0){
+      splitAt=headerIdx+1;
+    }else{
+      // No header either (Resource files etc.) — all declaration
+      return{decl:code,impl:'',splitLine:lines.length};
+    }
+  }
+  // Skip blank lines between declaration and implementation
+  let implStart=splitAt;
+  while(implStart<lines.length&&lines[implStart].trim()==='') implStart++;
+  const decl=lines.slice(0,splitAt).join('\n');
+  if(implStart>=lines.length) return{decl,impl:'',splitLine:lines.length};
+  const impl=lines.slice(implStart).join('\n');
+  return{decl,impl,splitLine:implStart};
 }
 
 // Generic pane highlight renderer
@@ -423,7 +438,7 @@ function renderLineNumbersPane(code,elId,lineOffset,tabId){
     let cls='line-num';
     if(searchLines.has(globalLine)) cls+=' active-search';
     else if(globalLine===cursorLineIdx) cls+=' cursor-line';
-    h+=`<div class="${cls}">${globalLine+1}</div>`;
+    h+=`<div class="${cls}">${i+1}</div>`;
   }
   document.getElementById(elId).innerHTML=h;
 }
@@ -1047,8 +1062,12 @@ function jumpTo(idx){
     buildTabs();buildSidebar();
     renderCode(activeTabId);
   }else{
-    renderHighlight(activeTabId);
-    renderLineNumbers(activeTabId);
+    renderHighlightPane(currentSplit.decl,'declHighlight',0,activeTabId);
+    renderLineNumbersPane(currentSplit.decl,'declLineNumbers',0,activeTabId);
+    if(currentSplit.impl.trim()){
+      renderHighlightPane(currentSplit.impl,'implHighlight',currentSplit.splitLine,activeTabId);
+      renderLineNumbersPane(currentSplit.impl,'implLineNumbers',currentSplit.splitLine,activeTabId);
+    }
   }
   // Ensure scroll happens AFTER render
   requestAnimationFrame(()=>scrollToMatch());
@@ -1098,10 +1117,11 @@ function onEditorClick(e,pane){
   setTimeout(()=>{
     const pos=ta.selectionStart;
     const textBefore=ta.value.slice(0,pos);
-    cursorLineIdx=textBefore.split('\n').length-1+offset;
+    const localLine=textBefore.split('\n').length-1;
+    cursorLineIdx=localLine+offset;
     renderLineNumbersPane(currentSplit.decl,'declLineNumbers',0,activeTabId);
     if(currentSplit.impl.trim()) renderLineNumbersPane(currentSplit.impl,'implLineNumbers',currentSplit.splitLine,activeTabId);
-    document.getElementById('cursorPos').textContent='行 '+(cursorLineIdx+1);
+    document.getElementById('cursorPos').textContent='行 '+(localLine+1);
   },0);
 }
 
@@ -1116,7 +1136,8 @@ function onDblClick(e,pane){
     const word=ta.value.slice(start,end);
     if(!word.trim()) return;
     dblWord=word.trim();
-    cursorLineIdx=ta.value.slice(0,start).split('\n').length-1+offset;
+    const localLine=ta.value.slice(0,start).split('\n').length-1;
+    cursorLineIdx=localLine+offset;
     renderHighlightPane(currentSplit.decl,'declHighlight',0,activeTabId);
     renderLineNumbersPane(currentSplit.decl,'declLineNumbers',0,activeTabId);
     if(currentSplit.impl.trim()){
@@ -1124,7 +1145,7 @@ function onDblClick(e,pane){
       renderLineNumbersPane(currentSplit.impl,'implLineNumbers',currentSplit.splitLine,activeTabId);
     }
     document.getElementById('statusSel').textContent='「'+dblWord+'」選択中';
-    document.getElementById('cursorPos').textContent='行 '+(cursorLineIdx+1);
+    document.getElementById('cursorPos').textContent='行 '+(localLine+1);
   },10);
 }
 
