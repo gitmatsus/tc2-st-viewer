@@ -61,6 +61,14 @@ header{display:flex;align-items:center;padding:8px 14px;background:var(--surface
 .tree-file .hit-badge{font-size:9px;background:var(--search-cur);color:#000;border-radius:3px;padding:0 4px;font-weight:700;margin-left:auto}
 
 .editor-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.editor-panes{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.pane-decl,.pane-impl{display:flex;flex-direction:column;overflow:hidden;min-height:60px}
+.pane-decl{height:35%}
+.pane-impl{flex:1}
+.pane-decl.full{flex:1;height:auto}
+.pane-label{font-size:10px;padding:2px 8px;color:var(--text-dim);background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;user-select:none;font-family:'JetBrains Mono',monospace;letter-spacing:.06em}
+.pane-resizer{height:5px;background:var(--border);cursor:ns-resize;flex-shrink:0;transition:background .15s}
+.pane-resizer:hover,.pane-resizer.dragging{background:var(--accent)}
 .editor-wrapper{flex:1;display:flex;overflow:hidden;position:relative}
 .line-numbers{width:50px;background:var(--surface);border-right:1px solid var(--border);padding:16px 0;overflow:hidden;flex-shrink:0;user-select:none}
 .line-num{height:calc(1em * var(--line-h));display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text-dim);opacity:.45;line-height:var(--line-h)}
@@ -70,8 +78,8 @@ header{display:flex;align-items:center;padding:8px 14px;background:var(--surface
 .editor-scroll{flex:1;overflow:auto;position:relative}
 .code-content{position:relative;min-height:100%}
 .highlight-layer{padding:16px;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:var(--line-h);white-space:pre;pointer-events:none;min-width:100%;word-break:normal;overflow-wrap:normal;tab-size:2}
-#codeTextarea{position:absolute;top:0;left:0;width:100%;height:100%;padding:16px;background:transparent;color:transparent;caret-color:var(--accent);border:none;outline:none;resize:none;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:var(--line-h);white-space:pre;overflow:hidden;tab-size:2;cursor:text;-webkit-user-select:text;user-select:text}
-#codeTextarea::selection{background:rgba(0,217,255,0.20)}
+#declTextarea,#implTextarea{position:absolute;top:0;left:0;width:100%;height:100%;padding:16px;background:transparent;color:transparent;caret-color:var(--accent);border:none;outline:none;resize:none;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:var(--line-h);white-space:pre;overflow:hidden;tab-size:2;cursor:text;-webkit-user-select:text;user-select:text}
+#declTextarea::selection,#implTextarea::selection{background:rgba(0,217,255,0.20)}
 
 .kw{color:var(--kw);font-weight:500}
 .tc2kw{color:var(--tc2kw);font-weight:500}
@@ -136,18 +144,43 @@ header{display:flex;align-items:center;padding:8px 14px;background:var(--surface
 <div class="main">
   <div class="sidebar" id="sidebar"></div>
   <div class="editor-area">
-    <div class="editor-wrapper">
-      <div class="line-numbers" id="lineNumbers"></div>
-      <div class="editor-scroll" id="editorScroll" onscroll="syncScroll()">
-        <div class="code-content">
-          <div class="highlight-layer" id="highlightLayer"></div>
-          <textarea id="codeTextarea" readonly spellcheck="false" autocomplete="off"
-            ondblclick="onDblClick(event)"
-            onmouseup="onMouseUp(event)"
-            onclick="onEditorClick(event)"
-            onkeydown="onTextareaKey(event)"></textarea>
+    <div class="editor-panes">
+      <!-- 宣言部（上段） -->
+      <div class="pane-decl full" id="paneDecl">
+        <div class="pane-label" id="declLabel">宣言部</div>
+        <div class="editor-wrapper">
+          <div class="line-numbers" id="declLineNumbers"></div>
+          <div class="editor-scroll" id="declScroll" onscroll="syncScrollDecl()">
+            <div class="code-content">
+              <div class="highlight-layer" id="declHighlight"></div>
+              <textarea id="declTextarea" readonly spellcheck="false" autocomplete="off"
+                ondblclick="onDblClick(event,'decl')"
+                onmouseup="onMouseUp(event,'decl')"
+                onclick="onEditorClick(event,'decl')"
+                onkeydown="onTextareaKey(event)"></textarea>
+            </div>
+            <div id="emptyState"><div class="empty-icon">📂</div><div class="empty-title">ファイルを開いてください</div><div class="empty-sub">.pro / .st / .exp ファイルに対応</div></div>
+          </div>
         </div>
-        <div id="emptyState"><div class="empty-icon">📂</div><div class="empty-title">ファイルを開いてください</div><div class="empty-sub">.pro / .st / .exp ファイルに対応</div></div>
+      </div>
+      <!-- リサイズハンドル -->
+      <div class="pane-resizer" id="paneResizer" style="display:none"></div>
+      <!-- 実装部（下段） -->
+      <div class="pane-impl" id="paneImpl" style="display:none">
+        <div class="pane-label">実装部</div>
+        <div class="editor-wrapper">
+          <div class="line-numbers" id="implLineNumbers"></div>
+          <div class="editor-scroll" id="implScroll" onscroll="syncScrollImpl()">
+            <div class="code-content">
+              <div class="highlight-layer" id="implHighlight"></div>
+              <textarea id="implTextarea" readonly spellcheck="false" autocomplete="off"
+                ondblclick="onDblClick(event,'impl')"
+                onmouseup="onMouseUp(event,'impl')"
+                onclick="onEditorClick(event,'impl')"
+                onkeydown="onTextareaKey(event)"></textarea>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -188,8 +221,9 @@ let activeTabId=null;
 let searchMatches=[];
 let searchCurIdx=-1;
 let optCase=false,optWord=false;
-let cursorLineIdx=0;   // line index where user last clicked in editor
+let cursorLineIdx=0;   // line index where user last clicked in editor (full code)
 let dblWord='';        // word highlighted by last dblclick
+let currentSplit={decl:'',impl:'',splitLine:0}; // current pane split state
 
 // ============================================================
 // Syntax highlight
@@ -305,17 +339,35 @@ function hlLine(line, commentState){
 // ============================================================
 // Render
 // ============================================================
-function renderHighlight(tabId){
-  const code=PROJECT_DATA.pous[tabId]||'';
+// Split POU content into declaration (VAR...END_VAR) and implementation
+function splitPouContent(code){
   const lines=code.split('\n');
-  const cmtMap=buildCommentMap(code);
+  // Find the last END_VAR line
+  let lastEndVar=-1;
+  for(let i=lines.length-1;i>=0;i--){
+    if(/\bEND_VAR\b/.test(lines[i])){lastEndVar=i;break;}
+  }
+  if(lastEndVar<0) return{decl:code,impl:'',splitLine:lines.length};
+  const splitLine=lastEndVar+1;
+  const decl=lines.slice(0,splitLine).join('\n');
+  const impl=lines.slice(splitLine).join('\n');
+  return{decl,impl:impl.replace(/^\n+/,''),splitLine};
+}
 
-  // Search match map
+// Generic pane highlight renderer
+function renderHighlightPane(code,hlId,lineOffset,tabId){
+  const lines=code.split('\n');
+  const fullCode=PROJECT_DATA.pous[tabId]||'';
+  const cmtMap=buildCommentMap(fullCode);
+
+  // Search match map (filter to this pane's line range)
   const lineMap=new Map();
   searchMatches.forEach((m,idx)=>{
     if(m.tabId!==tabId) return;
-    if(!lineMap.has(m.lineIdx)) lineMap.set(m.lineIdx,[]);
-    lineMap.get(m.lineIdx).push({start:m.start,end:m.end,isCur:idx===searchCurIdx});
+    const localLine=m.lineIdx-lineOffset;
+    if(localLine<0||localLine>=lines.length) return;
+    if(!lineMap.has(localLine)) lineMap.set(localLine,[]);
+    lineMap.get(localLine).push({start:m.start,end:m.end,isCur:idx===searchCurIdx});
   });
 
   // dblclick word highlight map
@@ -332,11 +384,11 @@ function renderHighlight(tabId){
   }
 
   const html=lines.map((line,i)=>{
+    const globalLine=i+lineOffset;
     const marks=lineMap.get(i)||[];
     const wmarks=wordMap.get(i)||[];
-    if(!marks.length&&!wmarks.length) return hlLine(line,cmtMap[i]);
+    if(!marks.length&&!wmarks.length) return hlLine(line,cmtMap[globalLine]);
 
-    // Merge: search > word
     const all=[
       ...marks.map(m=>({...m,type:m.isCur?'cur':'search'})),
       ...wmarks.map(m=>({...m,type:'word'}))
@@ -351,40 +403,70 @@ function renderHighlight(tabId){
     }
     if(pos<line.length) parts.push({text:line.slice(pos),type:'plain'});
     return parts.map(p=>{
-      if(p.type==='plain')  return hlLine(p.text,cmtMap[i]);
+      if(p.type==='plain')  return hlLine(p.text,cmtMap[globalLine]);
       if(p.type==='cur')    return `<span class="search-cur-hl">${esc(p.text)}</span>`;
       if(p.type==='search') return `<span class="search-hl">${esc(p.text)}</span>`;
       if(p.type==='word')   return `<span class="word-sel">${esc(p.text)}</span>`;
     }).join('');
   }).join('\n');
 
-  document.getElementById('highlightLayer').innerHTML=html+'\n';
+  document.getElementById(hlId).innerHTML=html+'\n';
 }
 
-function renderLineNumbers(tabId){
-  const code=PROJECT_DATA.pous[tabId]||'';
+// Generic pane line number renderer
+function renderLineNumbersPane(code,elId,lineOffset,tabId){
   const lines=code.split('\n');
   const searchLines=new Set(searchMatches.filter(m=>m.tabId===tabId).map(m=>m.lineIdx));
   let h='';
   for(let i=0;i<lines.length;i++){
+    const globalLine=i+lineOffset;
     let cls='line-num';
-    if(searchLines.has(i)) cls+=' active-search';
-    else if(i===cursorLineIdx) cls+=' cursor-line';
-    h+=`<div class="${cls}">${i+1}</div>`;
+    if(searchLines.has(globalLine)) cls+=' active-search';
+    else if(globalLine===cursorLineIdx) cls+=' cursor-line';
+    h+=`<div class="${cls}">${globalLine+1}</div>`;
   }
-  document.getElementById('lineNumbers').innerHTML=h;
+  document.getElementById(elId).innerHTML=h;
 }
 
 function renderCode(tabId){
   if(!PROJECT_DATA||!tabId){return;}
   const code=PROJECT_DATA.pous[tabId]||'';
-  renderHighlight(tabId);
-  renderLineNumbers(tabId);
-  const ta=document.getElementById('codeTextarea');
-  if(ta.value!==code) ta.value=code;
-  const lines=code.split('\n');
+  const split=splitPouContent(code);
+  currentSplit=split;
+
+  const paneDecl=document.getElementById('paneDecl');
+  const paneImpl=document.getElementById('paneImpl');
+  const resizer=document.getElementById('paneResizer');
+
+  if(split.impl.trim()){
+    // Both panes visible
+    paneDecl.classList.remove('full');
+    paneImpl.style.display='';
+    resizer.style.display='';
+  }else{
+    // Declaration only (Resource files, etc.)
+    paneDecl.classList.add('full');
+    paneImpl.style.display='none';
+    resizer.style.display='none';
+  }
+
+  // Render declaration pane
+  renderHighlightPane(split.decl,'declHighlight',0,tabId);
+  renderLineNumbersPane(split.decl,'declLineNumbers',0,tabId);
+  const declTa=document.getElementById('declTextarea');
+  if(declTa.value!==split.decl) declTa.value=split.decl;
+
+  // Render implementation pane
+  if(split.impl.trim()){
+    const implOffset=split.splitLine;
+    renderHighlightPane(split.impl,'implHighlight',implOffset,tabId);
+    renderLineNumbersPane(split.impl,'implLineNumbers',implOffset,tabId);
+    const implTa=document.getElementById('implTextarea');
+    if(implTa.value!==split.impl) implTa.value=split.impl;
+  }
+
   document.getElementById('statusFile').textContent=tabId;
-  document.getElementById('statusLines').textContent=lines.length+' 行';
+  document.getElementById('statusLines').textContent=code.split('\n').length+' 行';
 }
 
 // ============================================================
@@ -463,7 +545,9 @@ function openTab(name){
     updateCount();
     requestAnimationFrame(()=>scrollToMatch());
   }else{
-    document.getElementById('editorScroll').scrollTop=0;
+    document.getElementById('declScroll').scrollTop=0;
+    const implS=document.getElementById('implScroll');
+    if(implS) implS.scrollTop=0;
   }
 }
 
@@ -497,7 +581,7 @@ function loadFileFromBlob(file){
 
 // Drag & Drop support
 document.addEventListener('DOMContentLoaded',()=>{
-  const dropZone=document.getElementById('editorScroll');
+  const dropZone=document.getElementById('declScroll');
   const emptyEl=document.getElementById('emptyState');
   dropZone.addEventListener('dragover',e=>{
     e.preventDefault();e.stopPropagation();
@@ -975,60 +1059,79 @@ function scrollToMatch(){
   const m=searchMatches[searchCurIdx];
   if(!m||m.tabId!==activeTabId) return;
 
-  const scroll=document.getElementById('editorScroll');
-  const hl=document.getElementById('highlightLayer');
-  // Compute line height from actual rendered element
-  const lh=hl.scrollHeight/((PROJECT_DATA&&PROJECT_DATA.pous[activeTabId])||'').split('\n').length;
-  const targetY=m.lineIdx*lh+16;
+  const sp=currentSplit;
+  const inDecl=m.lineIdx<sp.splitLine||!sp.impl.trim();
+  const scrollId=inDecl?'declScroll':'implScroll';
+  const hlId=inDecl?'declHighlight':'implHighlight';
+  const lnId=inDecl?'declLineNumbers':'implLineNumbers';
+  const localLine=inDecl?m.lineIdx:(m.lineIdx-sp.splitLine);
+  const paneCode=inDecl?sp.decl:sp.impl;
+
+  const scroll=document.getElementById(scrollId);
+  const hl=document.getElementById(hlId);
+  if(!scroll||!hl) return;
+  const lineCount=paneCode.split('\n').length;
+  const lh=lineCount>0?hl.scrollHeight/lineCount:20;
+  const targetY=localLine*lh+16;
   const viewH=scroll.clientHeight;
 
-  // Always scroll if not fully visible
   if(targetY<scroll.scrollTop+40||targetY+lh>scroll.scrollTop+viewH-40){
     scroll.scrollTop=Math.max(0,targetY-viewH/3);
   }
-  // Also sync line numbers
-  document.getElementById('lineNumbers').scrollTop=scroll.scrollTop;
+  document.getElementById(lnId).scrollTop=scroll.scrollTop;
 }
 
 // ============================================================
 // Editor interactions
 // ============================================================
 
+// Determine line offset for a given pane
+function paneLineOffset(pane){
+  return pane==='impl'?currentSplit.splitLine:0;
+}
+
 // Click: update cursor position (used as search start)
-function onEditorClick(e){
-  const ta=document.getElementById('codeTextarea');
-  // Calculate line from cursor position
+function onEditorClick(e,pane){
+  const taId=pane==='impl'?'implTextarea':'declTextarea';
+  const ta=document.getElementById(taId);
+  const offset=paneLineOffset(pane);
   setTimeout(()=>{
     const pos=ta.selectionStart;
     const textBefore=ta.value.slice(0,pos);
-    cursorLineIdx=textBefore.split('\n').length-1;
-    renderLineNumbers(activeTabId);
+    cursorLineIdx=textBefore.split('\n').length-1+offset;
+    renderLineNumbersPane(currentSplit.decl,'declLineNumbers',0,activeTabId);
+    if(currentSplit.impl.trim()) renderLineNumbersPane(currentSplit.impl,'implLineNumbers',currentSplit.splitLine,activeTabId);
     document.getElementById('cursorPos').textContent='行 '+(cursorLineIdx+1);
   },0);
 }
 
 // Double-click: select word only (no copy)
-// Browser already selects the word on dblclick in textarea — we just capture it
-function onDblClick(e){
-  const ta=document.getElementById('codeTextarea');
+function onDblClick(e,pane){
+  const taId=pane==='impl'?'implTextarea':'declTextarea';
+  const ta=document.getElementById(taId);
+  const offset=paneLineOffset(pane);
   setTimeout(()=>{
     const start=ta.selectionStart,end=ta.selectionEnd;
     if(start===end) return;
     const word=ta.value.slice(start,end);
     if(!word.trim()) return;
     dblWord=word.trim();
-    // Update cursor line
-    cursorLineIdx=ta.value.slice(0,start).split('\n').length-1;
-    renderHighlight(activeTabId);
-    renderLineNumbers(activeTabId);
+    cursorLineIdx=ta.value.slice(0,start).split('\n').length-1+offset;
+    renderHighlightPane(currentSplit.decl,'declHighlight',0,activeTabId);
+    renderLineNumbersPane(currentSplit.decl,'declLineNumbers',0,activeTabId);
+    if(currentSplit.impl.trim()){
+      renderHighlightPane(currentSplit.impl,'implHighlight',currentSplit.splitLine,activeTabId);
+      renderLineNumbersPane(currentSplit.impl,'implLineNumbers',currentSplit.splitLine,activeTabId);
+    }
     document.getElementById('statusSel').textContent='「'+dblWord+'」選択中';
     document.getElementById('cursorPos').textContent='行 '+(cursorLineIdx+1);
   },10);
 }
 
 // Mouse up: track manual selection
-function onMouseUp(e){
-  const ta=document.getElementById('codeTextarea');
+function onMouseUp(e,pane){
+  const taId=pane==='impl'?'implTextarea':'declTextarea';
+  const ta=document.getElementById(taId);
   setTimeout(()=>{
     const start=ta.selectionStart,end=ta.selectionEnd;
     if(start!==end){
@@ -1043,9 +1146,12 @@ function onMouseUp(e){
 // Ctrl+C copy feedback
 function onTextareaKey(e){
   if((e.ctrlKey||e.metaKey)&&e.key==='c'){
-    const ta=document.getElementById('codeTextarea');
-    const sel=ta.value.slice(ta.selectionStart,ta.selectionEnd);
-    if(sel) setTimeout(()=>showToast('📋 コピーしました ('+sel.length+'文字)'),30);
+    // Check which textarea is focused
+    const ta=document.activeElement;
+    if(ta&&ta.tagName==='TEXTAREA'){
+      const sel=ta.value.slice(ta.selectionStart,ta.selectionEnd);
+      if(sel) setTimeout(()=>showToast('📋 コピーしました ('+sel.length+'文字)'),30);
+    }
   }
 }
 
@@ -1056,21 +1162,23 @@ document.addEventListener('keydown',e=>{
   if(e.key==='F2'){
     e.preventDefault();
 
-    // Get current selection from textarea
-    const ta=document.getElementById('codeTextarea');
-    const start=ta.selectionStart,end=ta.selectionEnd;
+    // Get current selection from whichever textarea is focused
+    const ta=document.activeElement;
     let wordToSearch='';
-    if(start!==end){
-      wordToSearch=ta.value.slice(start,end).trim();
-    } else if(dblWord){
-      wordToSearch=dblWord;
+    let offset=0;
+    if(ta&&ta.tagName==='TEXTAREA'){
+      offset=ta.id==='implTextarea'?currentSplit.splitLine:0;
+      const start=ta.selectionStart,end=ta.selectionEnd;
+      if(start!==end){
+        wordToSearch=ta.value.slice(start,end).trim();
+        cursorLineIdx=ta.value.slice(0,start).split('\n').length-1+offset;
+      }
     }
+    if(!wordToSearch&&dblWord) wordToSearch=dblWord;
 
     const inp=document.getElementById('searchInput');
     if(wordToSearch){
       inp.value=wordToSearch;
-      // Update cursor line from selection start
-      cursorLineIdx=ta.value.slice(0,start).split('\n').length-1;
       runSearch();
       showToast('🔍 「'+wordToSearch+'」を検索');
     } else {
@@ -1086,11 +1194,13 @@ document.addEventListener('keydown',e=>{
 // ============================================================
 // Scroll sync
 // ============================================================
-function syncScroll(){
-  const s=document.getElementById('editorScroll');
-  // ハイライト層・テキストエリアは自然スクロール（code-content内で同期）
-  // 行番号のみ手動同期
-  document.getElementById('lineNumbers').scrollTop=s.scrollTop;
+function syncScrollDecl(){
+  const s=document.getElementById('declScroll');
+  document.getElementById('declLineNumbers').scrollTop=s.scrollTop;
+}
+function syncScrollImpl(){
+  const s=document.getElementById('implScroll');
+  document.getElementById('implLineNumbers').scrollTop=s.scrollTop;
 }
 
 // ============================================================
@@ -1099,9 +1209,15 @@ function syncScroll(){
 function showEmptyState(){
   const el=document.getElementById('emptyState');
   if(el) el.style.display='flex';
-  document.getElementById('codeTextarea').value='';
-  document.getElementById('highlightLayer').innerHTML='';
-  document.getElementById('lineNumbers').innerHTML='';
+  document.getElementById('declTextarea').value='';
+  document.getElementById('declHighlight').innerHTML='';
+  document.getElementById('declLineNumbers').innerHTML='';
+  document.getElementById('implTextarea').value='';
+  document.getElementById('implHighlight').innerHTML='';
+  document.getElementById('implLineNumbers').innerHTML='';
+  document.getElementById('paneImpl').style.display='none';
+  document.getElementById('paneResizer').style.display='none';
+  document.getElementById('paneDecl').classList.add('full');
   document.getElementById('statusFile').textContent='';
   document.getElementById('statusLines').textContent='';
   document.getElementById('tabBar').innerHTML='';
@@ -1110,6 +1226,39 @@ function hideEmptyState(){
   const el=document.getElementById('emptyState');
   if(el) el.style.display='none';
 }
+
+// ============================================================
+// Pane resizer drag handling
+// ============================================================
+(function initResizer(){
+  document.addEventListener('DOMContentLoaded',()=>{
+    const resizer=document.getElementById('paneResizer');
+    const paneDecl=document.getElementById('paneDecl');
+    const container=document.querySelector('.editor-panes');
+    let startY=0,startH=0;
+
+    resizer.addEventListener('mousedown',e=>{
+      e.preventDefault();
+      startY=e.clientY;
+      startH=paneDecl.offsetHeight;
+      resizer.classList.add('dragging');
+      document.addEventListener('mousemove',onMove);
+      document.addEventListener('mouseup',onUp);
+    });
+
+    function onMove(e){
+      const dy=e.clientY-startY;
+      const totalH=container.offsetHeight;
+      const newH=Math.max(60,Math.min(totalH-100,startH+dy));
+      paneDecl.style.height=newH+'px';
+    }
+    function onUp(){
+      resizer.classList.remove('dragging');
+      document.removeEventListener('mousemove',onMove);
+      document.removeEventListener('mouseup',onUp);
+    }
+  });
+})();
 
 // ============================================================
 // Toast
