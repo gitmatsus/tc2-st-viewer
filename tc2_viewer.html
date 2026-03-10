@@ -109,6 +109,81 @@ header{display:flex;align-items:center;padding:8px 14px;background:var(--surface
 .empty-icon{font-size:52px;opacity:.25;transition:opacity .2s}
 .empty-title{font-size:14px;font-weight:600;letter-spacing:.06em;color:var(--text);transition:color .2s}
 .empty-sub{font-size:11px;opacity:.6}
+
+/* ============================================================
+   Comparison mode styles (WinMerge-inspired, dark theme)
+   ============================================================ */
+.mode-toggle{display:flex;gap:2px;margin-right:4px}
+.mode-btn{padding:4px 10px;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--text-dim);cursor:pointer;font-size:11px;font-family:'Syne',sans-serif;font-weight:600;transition:all .15s}
+.mode-btn.active{background:rgba(0,217,255,.15);border-color:var(--accent);color:var(--accent)}
+.mode-btn:hover:not(.active){color:var(--text);border-color:var(--text-dim)}
+
+/* Comparison container (hidden by default) */
+.comparison-container{display:none;flex:1;overflow:hidden}
+.comparison-container.active{display:flex}
+
+/* Left pane: tree diff */
+.cmp-left{width:210px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.cmp-left-header{padding:8px 12px 6px;font-size:10px;font-weight:600;letter-spacing:.12em;color:var(--text-dim);text-transform:uppercase;border-bottom:1px solid var(--border)}
+.cmp-tree{flex:1;overflow-y:auto;padding:4px 0}
+.cmp-tree-item{display:flex;align-items:center;gap:6px;padding:4px 10px;font-size:11px;font-family:'JetBrains Mono',monospace;cursor:pointer;color:var(--text-dim);transition:all .1s}
+.cmp-tree-item:hover{background:var(--surface2);color:var(--text)}
+.cmp-tree-item.active{color:var(--accent);background:rgba(0,217,255,.07)}
+.cmp-tree-item .cmp-status{font-size:9px;font-weight:700;border-radius:3px;padding:0 5px;margin-left:auto}
+.cmp-status-modified{background:rgba(239,203,5,.25);color:#efcb05}
+.cmp-status-added{background:rgba(86,211,100,.25);color:#56d364}
+.cmp-status-deleted{background:rgba(255,123,114,.25);color:#ff7b72}
+.cmp-status-unchanged{background:rgba(125,133,144,.15);color:var(--text-dim)}
+
+/* Right pane: code comparison */
+.cmp-right{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.cmp-file-headers{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.cmp-file-header{flex:1;padding:4px 12px;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text-dim);background:var(--surface);display:flex;align-items:center;gap:8px}
+.cmp-file-header:first-child{border-right:1px solid var(--border)}
+.cmp-file-header .cmp-file-btn{padding:3px 8px;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--text-dim);cursor:pointer;font-size:10px;font-family:'Syne',sans-serif;font-weight:600;transition:all .15s}
+.cmp-file-header .cmp-file-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Code pane rows (decl / impl) */
+.cmp-code-area{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.cmp-drop-overlay{position:absolute;inset:0;display:flex;z-index:10;pointer-events:none}
+.cmp-drop-overlay.hidden{display:none}
+.cmp-section-row{flex:1;display:flex;flex-direction:row;overflow:hidden;min-height:60px}
+.cmp-section-row+.cmp-section-row{border-top:1px solid var(--border)}
+.cmp-pane{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.cmp-pane+.cmp-pane{border-left:1px solid var(--border)}
+.cmp-pane-label{font-size:10px;padding:2px 8px;color:var(--text-dim);background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;user-select:none;font-family:'JetBrains Mono',monospace;letter-spacing:.06em}
+.cmp-pane-body{flex:1;display:flex;overflow:hidden}
+.cmp-line-numbers{width:42px;background:var(--surface);border-right:1px solid var(--border);padding:8px 0;overflow:hidden;flex-shrink:0;user-select:none}
+.cmp-line-num{height:calc(1em * var(--line-h));display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-dim);opacity:.45;line-height:var(--line-h)}
+.cmp-code-scroll{flex:1;overflow:auto;position:relative}
+.cmp-highlight{padding:8px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:var(--line-h);white-space:pre;min-width:100%;word-break:normal;overflow-wrap:normal;tab-size:2}
+.cmp-highlight>div{height:calc(1em * var(--line-h));overflow:hidden}
+
+/* Diff line colors (WinMerge-inspired for dark theme) */
+.diff-line-mod{background:rgba(239,203,5,.12)}
+.diff-line-del{background:rgba(255,123,114,.12)}
+.diff-line-add{background:rgba(86,211,100,.12)}
+.diff-line-placeholder{background:rgba(128,128,128,.06)}
+
+/* Comparison resizer between decl/impl */
+.cmp-resizer{height:4px;background:var(--border);cursor:ns-resize;flex-shrink:0;transition:background .15s}
+.cmp-resizer:hover,.cmp-resizer.dragging{background:var(--accent)}
+
+/* Diff map bar (minimap of changes) */
+.cmp-diff-map{position:absolute;right:0;top:0;bottom:0;width:14px;cursor:pointer;z-index:5;background:var(--surface)}
+
+/* Comparison empty state & drop zones */
+.cmp-empty{display:flex;align-items:center;justify-content:center;flex:1;color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--surface2)}
+.cmp-drop-zone{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-dim);font-family:'JetBrains Mono',monospace;gap:10px;background:var(--surface2);pointer-events:auto;transition:background .2s,outline-color .2s}
+.cmp-drop-zone+.cmp-drop-zone{border-left:1px solid var(--border)}
+.cmp-drop-zone.drag-over{background:var(--surface);outline:2px dashed var(--accent);outline-offset:-6px}
+.cmp-drop-zone.drag-over .cmp-drop-icon{opacity:.6}
+.cmp-drop-zone.drag-over .cmp-drop-title{color:var(--accent)}
+.cmp-drop-icon{font-size:40px;opacity:.25;transition:opacity .2s}
+.cmp-drop-title{font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--text);transition:color .2s}
+.cmp-drop-sub{font-size:10px;opacity:.6}
+.cmp-hit-badge{font-size:9px;background:var(--search-cur);color:#000;border-radius:3px;padding:0 4px;font-weight:700;margin-left:auto}
+.cmp-file-header.cmp-search-active{border-bottom:2px solid var(--accent)}
 </style>
 </head>
 <body>
@@ -119,7 +194,11 @@ header{display:flex;align-items:center;padding:8px 14px;background:var(--surface
     TwinCAT <span class="v2">v2</span>&nbsp;ST Viewer
   </div>
   <span class="readonly-badge">🔒 読み取り専用</span>
-  <label class="btn-open">
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="modeView" onclick="switchMode('view')">ビューア</button>
+    <button class="mode-btn" id="modeCompare" onclick="switchMode('compare')">比較</button>
+  </div>
+  <label class="btn-open" id="btnOpenSingle">
     📂 ファイルを開く
     <input type="file" accept=".pro,.st,.exp" style="display:none" onchange="loadProFile(event)">
   </label>
@@ -141,9 +220,9 @@ header{display:flex;align-items:center;padding:8px 14px;background:var(--surface
 
 <div class="tab-bar" id="tabBar"></div>
 
-<div class="main">
+<div class="main" id="mainArea">
   <div class="sidebar" id="sidebar"></div>
-  <div class="editor-area">
+  <div class="editor-area" id="editorArea">
     <div class="editor-panes">
       <!-- 宣言部（上段） -->
       <div class="pane-decl full" id="paneDecl">
@@ -178,6 +257,91 @@ header{display:flex;align-items:center;padding:8px 14px;background:var(--surface
                 onmouseup="onMouseUp(event,'impl')"
                 onclick="onEditorClick(event,'impl')"
                 onkeydown="onTextareaKey(event)"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comparison mode container -->
+  <div class="comparison-container" id="cmpContainer">
+    <div class="cmp-left">
+      <div class="cmp-left-header">比較結果</div>
+      <div class="cmp-tree" id="cmpTree"></div>
+    </div>
+    <div class="cmp-right">
+      <div class="cmp-file-headers">
+        <div class="cmp-file-header">
+          <label class="cmp-file-btn">📂 ファイル1
+            <input type="file" accept=".pro,.st,.exp" style="display:none" onchange="loadCmpFile(event,1)">
+          </label>
+          <span id="cmpFile1Name">未選択</span>
+        </div>
+        <div class="cmp-file-header">
+          <label class="cmp-file-btn">📂 ファイル2
+            <input type="file" accept=".pro,.st,.exp" style="display:none" onchange="loadCmpFile(event,2)">
+          </label>
+          <span id="cmpFile2Name">未選択</span>
+        </div>
+      </div>
+      <div class="cmp-code-area" id="cmpCodeArea">
+        <!-- Diff map bar -->
+        <canvas class="cmp-diff-map" id="cmpDiffMap"></canvas>
+        <!-- Drop zone overlay -->
+        <div class="cmp-drop-overlay" id="cmpDropOverlay">
+          <div class="cmp-drop-zone" id="cmpDropZone1">
+            <div class="cmp-drop-icon">📂</div>
+            <div class="cmp-drop-title">ファイル1をドロップ</div>
+            <div class="cmp-drop-sub">.pro / .st / .exp ファイルに対応</div>
+          </div>
+          <div class="cmp-drop-zone" id="cmpDropZone2">
+            <div class="cmp-drop-icon">📂</div>
+            <div class="cmp-drop-title">ファイル2をドロップ</div>
+            <div class="cmp-drop-sub">.pro / .st / .exp ファイルに対応</div>
+          </div>
+        </div>
+        <!-- 宣言部 row -->
+        <div class="cmp-section-row" id="cmpDeclRow">
+          <div class="cmp-pane" id="cmpDeclPane1">
+            <div class="cmp-pane-label">宣言部</div>
+            <div class="cmp-pane-body">
+              <div class="cmp-line-numbers" id="cmpDeclLn1"></div>
+              <div class="cmp-code-scroll" id="cmpDeclScroll1">
+                <div class="cmp-highlight" id="cmpDeclHl1"></div>
+              </div>
+            </div>
+          </div>
+          <div class="cmp-pane" id="cmpDeclPane2">
+            <div class="cmp-pane-label">宣言部</div>
+            <div class="cmp-pane-body">
+              <div class="cmp-line-numbers" id="cmpDeclLn2"></div>
+              <div class="cmp-code-scroll" id="cmpDeclScroll2">
+                <div class="cmp-highlight" id="cmpDeclHl2"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- リサイザー -->
+        <div class="cmp-resizer" id="cmpResizer"></div>
+        <!-- 実装部 row -->
+        <div class="cmp-section-row" id="cmpImplRow">
+          <div class="cmp-pane" id="cmpImplPane1">
+            <div class="cmp-pane-label">実装部</div>
+            <div class="cmp-pane-body">
+              <div class="cmp-line-numbers" id="cmpImplLn1"></div>
+              <div class="cmp-code-scroll" id="cmpImplScroll1">
+                <div class="cmp-highlight" id="cmpImplHl1"></div>
+              </div>
+            </div>
+          </div>
+          <div class="cmp-pane" id="cmpImplPane2">
+            <div class="cmp-pane-label">実装部</div>
+            <div class="cmp-pane-body">
+              <div class="cmp-line-numbers" id="cmpImplLn2"></div>
+              <div class="cmp-code-scroll" id="cmpImplScroll2">
+                <div class="cmp-highlight" id="cmpImplHl2"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -224,6 +388,154 @@ let optCase=false,optWord=false;
 let cursorLineIdx=0;   // line index where user last clicked in editor (full code)
 let dblWord='';        // word highlighted by last dblclick
 let currentSplit={decl:'',impl:'',splitLine:0}; // current pane split state
+
+// ============================================================
+// Comparison mode state
+// ============================================================
+let comparisonMode=false;
+let file1Data=null;  // {tree, pous, filename}
+let file2Data=null;  // {tree, pous, filename}
+let cmpSelectedPou=null; // currently selected POU in comparison tree
+let cmpTreeResult=null;  // result of comparePouTrees()
+let cmpDisplayData={};   // {paneId: displayLines[]} for search
+let cmpSearchMatches=[]; // [{pouName,section,localLineIdx,start,end}] navigation matches (active side, all POUs)
+let cmpSearchCurIdx=-1;  // current search match index in comparison mode
+let cmpActiveSide='left';    // 'left'|'right' active search side
+let cmpHighlightData={};     // {paneId: [{displayIdx,start,end}]} highlight data for current POU
+
+// ============================================================
+// Diff engine (LCS-based)
+// ============================================================
+
+/**
+ * Compute line-level diff using LCS (Longest Common Subsequence).
+ * @param {string[]} lines1 - lines from file 1
+ * @param {string[]} lines2 - lines from file 2
+ * @returns {Array<{type:'match'|'del'|'add', line1?:number, line2?:number}>}
+ */
+function diffLines(lines1, lines2){
+  const n=lines1.length, m=lines2.length;
+  // Build LCS table
+  const dp=Array(n+1).fill(null).map(()=>Array(m+1).fill(0));
+  for(let i=1;i<=n;i++){
+    for(let j=1;j<=m;j++){
+      if(lines1[i-1]===lines2[j-1]) dp[i][j]=dp[i-1][j-1]+1;
+      else dp[i][j]=Math.max(dp[i-1][j],dp[i][j-1]);
+    }
+  }
+  // Backtrack to produce diff ops
+  const ops=[];
+  let i=n, j=m;
+  while(i>0||j>0){
+    if(i>0 && j>0 && lines1[i-1]===lines2[j-1]){
+      ops.unshift({type:'match',line1:i-1,line2:j-1});
+      i--;j--;
+    }else if(j>0 && (i===0||dp[i][j-1]>=dp[i-1][j])){
+      ops.unshift({type:'add',line2:j-1});
+      j--;
+    }else{
+      ops.unshift({type:'del',line1:i-1});
+      i--;
+    }
+  }
+  return ops;
+}
+
+/**
+ * Build aligned display arrays with placeholders for synchronized scrolling.
+ * Consecutive del+add pairs are treated as modifications.
+ * @param {Array} ops - diff operations from diffLines()
+ * @param {string[]} lines1
+ * @param {string[]} lines2
+ * @returns {{display1: Array, display2: Array}}
+ *   Each entry: {type:'match'|'mod'|'del'|'add'|'placeholder', content:string, lineNum?:number}
+ */
+function buildAlignedDisplay(ops, lines1, lines2){
+  const display1=[], display2=[];
+  let i=0;
+  while(i<ops.length){
+    if(ops[i].type==='match'){
+      display1.push({type:'match',content:lines1[ops[i].line1],lineNum:ops[i].line1+1});
+      display2.push({type:'match',content:lines2[ops[i].line2],lineNum:ops[i].line2+1});
+      i++;
+    }else{
+      // Collect consecutive dels then adds
+      const dels=[],adds=[];
+      while(i<ops.length&&ops[i].type==='del'){dels.push(ops[i]);i++;}
+      while(i<ops.length&&ops[i].type==='add'){adds.push(ops[i]);i++;}
+      // Pair up as modifications where possible
+      const paired=Math.min(dels.length,adds.length);
+      for(let p=0;p<paired;p++){
+        display1.push({type:'mod',content:lines1[dels[p].line1],lineNum:dels[p].line1+1});
+        display2.push({type:'mod',content:lines2[adds[p].line2],lineNum:adds[p].line2+1});
+      }
+      // Remaining dels → placeholder on right
+      for(let p=paired;p<dels.length;p++){
+        display1.push({type:'del',content:lines1[dels[p].line1],lineNum:dels[p].line1+1});
+        display2.push({type:'placeholder',content:''});
+      }
+      // Remaining adds → placeholder on left
+      for(let p=paired;p<adds.length;p++){
+        display1.push({type:'placeholder',content:''});
+        display2.push({type:'add',content:lines2[adds[p].line2],lineNum:adds[p].line2+1});
+      }
+    }
+  }
+  return {display1,display2};
+}
+
+/**
+ * Compare POU trees from two files.
+ * @param {{tree:Object, pous:Object}} data1
+ * @param {{tree:Object, pous:Object}} data2
+ * @returns {Array<{name:string, status:'unchanged'|'modified'|'added'|'deleted', folder:string}>}
+ */
+function comparePouTrees(data1, data2){
+  const names1=new Set(Object.keys(data1.pous));
+  const names2=new Set(Object.keys(data2.pous));
+  const allNames=new Set([...names1,...names2]);
+  const results=[];
+  for(const name of allNames){
+    const in1=names1.has(name), in2=names2.has(name);
+    let status;
+    let diffCount=0;
+    if(in1&&in2){
+      if(data1.pous[name]===data2.pous[name]){
+        status='unchanged';
+      }else{
+        status='modified';
+        // Count diff lines (mod/del/add) for display
+        const sp1=splitPouContent(data1.pous[name]);
+        const sp2=splitPouContent(data2.pous[name]);
+        const declOps=diffLines(sp1.decl?sp1.decl.split('\n'):[],sp2.decl?sp2.decl.split('\n'):[]);
+        const implOps=diffLines(sp1.impl?sp1.impl.split('\n'):[],sp2.impl?sp2.impl.split('\n'):[]);
+        for(const op of declOps) if(op.type!=='match') diffCount++;
+        for(const op of implOps) if(op.type!=='match') diffCount++;
+      }
+    }else if(in1){
+      status='deleted';
+    }else{
+      status='added';
+    }
+    // Determine folder from tree structure
+    let folder='';
+    const tree=data1.tree||data2.tree;
+    if(tree&&tree.POUs){
+      for(const [f,items] of Object.entries(tree.POUs)){
+        if(items.includes(name)){folder=f==='__root__'?'':f;break;}
+      }
+    }
+    results.push({name,status,folder,diffCount});
+  }
+  // Sort: modified first, then added, deleted, unchanged
+  const order={modified:0,added:1,deleted:2,unchanged:3};
+  results.sort((a,b)=>{
+    const oa=order[a.status]!==undefined?order[a.status]:3;
+    const ob=order[b.status]!==undefined?order[b.status]:3;
+    return oa-ob||a.name.localeCompare(b.name);
+  });
+  return results;
+}
 
 // ============================================================
 // Syntax highlight
@@ -596,6 +908,7 @@ function loadFileFromBlob(file){
 
 // Drag & Drop support
 document.addEventListener('DOMContentLoaded',()=>{
+  // Viewer mode D&D
   const dropZone=document.getElementById('declScroll');
   const emptyEl=document.getElementById('emptyState');
   dropZone.addEventListener('dragover',e=>{
@@ -616,6 +929,82 @@ document.addEventListener('DOMContentLoaded',()=>{
     }else if(file){
       showToast('⚠️ .pro / .st / .exp ファイルのみ対応しています');
     }
+  });
+
+  // Comparison mode click tracking
+  document.getElementById('cmpCodeArea').addEventListener('click',onCmpCodeClick);
+
+  // Comparison mode drag & drop with visual feedback
+  const cmpContainer=document.getElementById('cmpContainer');
+  const cmpDropOverlay=document.getElementById('cmpDropOverlay');
+  const cmpDropZone1=document.getElementById('cmpDropZone1');
+  const cmpDropZone2=document.getElementById('cmpDropZone2');
+  let cmpDragCounter=0;
+
+  function updateCmpDropOverlay(){
+    if(file1Data&&file2Data) cmpDropOverlay.classList.add('hidden');
+    else cmpDropOverlay.classList.remove('hidden');
+  }
+  updateCmpDropOverlay();
+
+  cmpContainer.addEventListener('dragenter',e=>{
+    e.preventDefault();e.stopPropagation();
+    cmpDragCounter++;
+    // Show overlay even if both files loaded (allow re-drop)
+    cmpDropOverlay.classList.remove('hidden');
+  });
+  cmpContainer.addEventListener('dragleave',e=>{
+    e.preventDefault();e.stopPropagation();
+    cmpDragCounter--;
+    if(cmpDragCounter<=0){
+      cmpDragCounter=0;
+      cmpDropZone1.classList.remove('drag-over');
+      cmpDropZone2.classList.remove('drag-over');
+      updateCmpDropOverlay();
+    }
+  });
+  cmpContainer.addEventListener('dragover',e=>{
+    e.preventDefault();e.stopPropagation();
+    e.dataTransfer.dropEffect='copy';
+    // Highlight the zone the cursor is over
+    const rect1=cmpDropZone1.getBoundingClientRect();
+    const rect2=cmpDropZone2.getBoundingClientRect();
+    const over1=e.clientX>=rect1.left&&e.clientX<=rect1.right&&e.clientY>=rect1.top&&e.clientY<=rect1.bottom;
+    const over2=e.clientX>=rect2.left&&e.clientX<=rect2.right&&e.clientY>=rect2.top&&e.clientY<=rect2.bottom;
+    cmpDropZone1.classList.toggle('drag-over',over1);
+    cmpDropZone2.classList.toggle('drag-over',over2);
+  });
+  cmpContainer.addEventListener('drop',e=>{
+    e.preventDefault();e.stopPropagation();
+    cmpDragCounter=0;
+    cmpDropZone1.classList.remove('drag-over');
+    cmpDropZone2.classList.remove('drag-over');
+    const file=e.dataTransfer.files[0];
+    if(!file||!/\.(pro|st|exp)$/i.test(file.name)){
+      if(file) showToast('⚠️ .pro / .st / .exp ファイルのみ対応しています');
+      updateCmpDropOverlay();
+      return;
+    }
+    // Determine which file slot by drop zone position
+    const rect1=cmpDropZone1.getBoundingClientRect();
+    const which=(e.clientX<=rect1.right)?1:2;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const parsed=parseProFile(ev.target.result,file.name);
+        if(which===1){
+          file1Data={tree:parsed.tree,pous:parsed.pous,filename:file.name};
+          document.getElementById('cmpFile1Name').textContent=file.name;
+        }else{
+          file2Data={tree:parsed.tree,pous:parsed.pous,filename:file.name};
+          document.getElementById('cmpFile2Name').textContent=file.name;
+        }
+        showToast('📂 '+file.name+' をファイル'+which+'に読み込みました');
+        updateCmpDropOverlay();
+        if(file1Data&&file2Data) runComparison();
+      }catch(err){showToast('⚠️ 読み込みエラー: '+err.message);}
+    };
+    reader.readAsArrayBuffer(file);
   });
 });
 
@@ -953,6 +1342,7 @@ function toggleOpt(id){
 }
 
 function runSearch(){
+  if(comparisonMode){runCmpSearch();return;}
   const q=document.getElementById('searchInput').value;
   searchMatches=[];searchCurIdx=-1;
 
@@ -1008,6 +1398,11 @@ function updateCount(){
   const el=document.getElementById('searchCount');
   const q=document.getElementById('searchInput').value;
   if(!q){el.textContent='';return;}
+  if(comparisonMode){
+    if(!cmpSearchMatches.length){el.textContent='0件';el.style.color='var(--kw)';return;}
+    el.textContent=`${cmpSearchCurIdx>=0?cmpSearchCurIdx+1:'-'} / ${cmpSearchMatches.length}件`;
+    el.style.color='var(--accent)';return;
+  }
   if(!searchMatches.length){el.textContent='0件';el.style.color='var(--kw)';return;}
   el.textContent=`${searchCurIdx>=0?searchCurIdx+1:'-'} / ${searchMatches.length}件`;
   el.style.color='var(--accent)';
@@ -1020,6 +1415,7 @@ function needReanchor(){
 }
 
 function nextMatch(){
+  if(comparisonMode){cmpNextMatch();return;}
   if(!searchMatches.length) return;
   if(needReanchor()){
     // Find first match at/after cursor in active tab
@@ -1035,6 +1431,7 @@ function nextMatch(){
 }
 
 function prevMatch(){
+  if(comparisonMode){cmpPrevMatch();return;}
   if(!searchMatches.length) return;
   if(needReanchor()){
     // Find last match at/before cursor in active tab
@@ -1183,16 +1580,21 @@ document.addEventListener('keydown',e=>{
   if(e.key==='F2'){
     e.preventDefault();
 
-    // Get current selection from whichever textarea is focused
-    const ta=document.activeElement;
+    // Get current selection from textarea (viewer) or window selection (comparison)
     let wordToSearch='';
-    let offset=0;
-    if(ta&&ta.tagName==='TEXTAREA'){
-      offset=ta.id==='implTextarea'?currentSplit.splitLine:0;
-      const start=ta.selectionStart,end=ta.selectionEnd;
-      if(start!==end){
-        wordToSearch=ta.value.slice(start,end).trim();
-        cursorLineIdx=ta.value.slice(0,start).split('\n').length-1+offset;
+    if(comparisonMode){
+      const sel=window.getSelection();
+      if(sel&&sel.toString().trim()) wordToSearch=sel.toString().trim();
+    }else{
+      const ta=document.activeElement;
+      let offset=0;
+      if(ta&&ta.tagName==='TEXTAREA'){
+        offset=ta.id==='implTextarea'?currentSplit.splitLine:0;
+        const start=ta.selectionStart,end=ta.selectionEnd;
+        if(start!==end){
+          wordToSearch=ta.value.slice(start,end).trim();
+          cursorLineIdx=ta.value.slice(0,start).split('\n').length-1+offset;
+        }
       }
     }
     if(!wordToSearch&&dblWord) wordToSearch=dblWord;
@@ -1282,6 +1684,41 @@ function hideEmptyState(){
 })();
 
 // ============================================================
+// Comparison mode resizer drag handling
+// ============================================================
+(function initCmpResizer(){
+  document.addEventListener('DOMContentLoaded',()=>{
+    const resizer=document.getElementById('cmpResizer');
+    const declRow=document.getElementById('cmpDeclRow');
+    const container=document.getElementById('cmpCodeArea');
+    let startY=0,startH=0;
+
+    resizer.addEventListener('mousedown',e=>{
+      e.preventDefault();
+      startY=e.clientY;
+      startH=declRow.offsetHeight;
+      // Disable flex:1 so explicit height takes effect
+      declRow.style.flex='none';
+      resizer.classList.add('dragging');
+      document.addEventListener('mousemove',onMove);
+      document.addEventListener('mouseup',onUp);
+    });
+
+    function onMove(e){
+      const dy=e.clientY-startY;
+      const totalH=container.offsetHeight;
+      const newH=Math.max(60,Math.min(totalH-100,startH+dy));
+      declRow.style.height=newH+'px';
+    }
+    function onUp(){
+      resizer.classList.remove('dragging');
+      document.removeEventListener('mousemove',onMove);
+      document.removeEventListener('mouseup',onUp);
+    }
+  });
+})();
+
+// ============================================================
 // Toast
 // ============================================================
 let toastTimer=null;
@@ -1290,6 +1727,682 @@ function showToast(msg){
   el.textContent=msg;el.classList.add('show');
   if(toastTimer) clearTimeout(toastTimer);
   toastTimer=setTimeout(()=>el.classList.remove('show'),1800);
+}
+
+// ============================================================
+// Comparison mode: mode switch, file load, rendering
+// ============================================================
+
+function switchMode(mode){
+  const isCompare=(mode==='compare');
+  comparisonMode=isCompare;
+  document.getElementById('modeView').classList.toggle('active',!isCompare);
+  document.getElementById('modeCompare').classList.toggle('active',isCompare);
+  // Toggle visibility
+  document.getElementById('sidebar').style.display=isCompare?'none':'';
+  document.getElementById('editorArea').style.display=isCompare?'none':'';
+  document.getElementById('cmpContainer').classList.toggle('active',isCompare);
+  document.getElementById('tabBar').style.display=isCompare?'none':'';
+  document.getElementById('btnOpenSingle').style.display=isCompare?'none':'';
+  if(isCompare&&typeof updateCmpDropOverlay==='function') updateCmpDropOverlay();
+  // Re-run search to update count/highlights for the active mode
+  if(document.getElementById('searchInput').value) runSearch();
+  else updateCount();
+}
+
+function loadCmpFile(event, which){
+  const file=event.target.files[0];
+  if(!file) return;
+  event.target.value='';
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const parsed=parseProFile(e.target.result,file.name);
+      if(which===1){
+        file1Data={tree:parsed.tree,pous:parsed.pous,filename:file.name};
+        document.getElementById('cmpFile1Name').textContent=file.name;
+      }else{
+        file2Data={tree:parsed.tree,pous:parsed.pous,filename:file.name};
+        document.getElementById('cmpFile2Name').textContent=file.name;
+      }
+      showToast('📂 '+file.name+' を読み込みました');
+      if(typeof updateCmpDropOverlay==='function') updateCmpDropOverlay();
+      if(file1Data&&file2Data) runComparison();
+    }catch(err){showToast('⚠️ 読み込みエラー: '+err.message);}
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function runComparison(){
+  cmpTreeResult=comparePouTrees(file1Data,file2Data);
+  renderCmpTree();
+  // Auto-select first modified item, or first item
+  const first=cmpTreeResult.find(r=>r.status==='modified')||cmpTreeResult[0];
+  if(first) selectCmpPou(first.name);
+}
+
+function renderCmpTree(){
+  const el=document.getElementById('cmpTree');
+  if(!cmpTreeResult||!cmpTreeResult.length){el.innerHTML='<div class="cmp-empty">比較結果なし</div>';return;}
+  const statusLabel={modified:'変更',added:'追加',deleted:'削除',unchanged:'同一'};
+  const statusIcon={modified:'~',added:'+',deleted:'-',unchanged:'='};
+  // Compute hits per POU from navigation matches (Layer 1)
+  const hitsPerPou={};
+  for(const m of cmpSearchMatches) hitsPerPou[m.pouName]=(hitsPerPou[m.pouName]||0)+1;
+  el.innerHTML=cmpTreeResult.map(r=>{
+    const cls='cmp-tree-item'+(r.name===cmpSelectedPou?' active':'');
+    const hits=hitsPerPou[r.name]||0;
+    return `<div class="${cls}" onclick="selectCmpPou('${esc(r.name).replace(/'/g,"\\'")}')">
+      <span>${esc(r.name)}</span>
+      ${hits>0?`<span class="cmp-hit-badge">${hits}</span>`:''}
+      <span class="cmp-status cmp-status-${r.status}">${statusIcon[r.status]} ${statusLabel[r.status]}${r.status==='modified'&&r.diffCount>0?' ('+r.diffCount+')':''}</span>
+    </div>`;
+  }).join('');
+}
+
+function selectCmpPou(name){
+  cmpSelectedPou=name;
+  renderCmpTree();
+  renderCmpCode(name);
+  // Rebuild highlight data for new POU (matches are already computed for all POUs)
+  if(document.getElementById('searchInput').value){
+    cmpBuildHighlightData();
+    cmpReRenderPanes();
+  }
+}
+
+function renderCmpCode(name){
+  const code1=(file1Data&&file1Data.pous[name])||'';
+  const code2=(file2Data&&file2Data.pous[name])||'';
+  const sp1=splitPouContent(code1);
+  const sp2=splitPouContent(code2);
+
+  // Diff for declaration parts
+  const declLines1=sp1.decl?sp1.decl.split('\n'):[];
+  const declLines2=sp2.decl?sp2.decl.split('\n'):[];
+  const declOps=diffLines(declLines1,declLines2);
+  const declAligned=buildAlignedDisplay(declOps,declLines1,declLines2);
+
+  // Diff for implementation parts
+  const implLines1=sp1.impl?sp1.impl.split('\n'):[];
+  const implLines2=sp2.impl?sp2.impl.split('\n'):[];
+  const implOps=diffLines(implLines1,implLines2);
+  const implAligned=buildAlignedDisplay(implOps,implLines1,implLines2);
+
+  // Save display data for search
+  cmpDisplayData={
+    cmpDeclHl1:declAligned.display1, cmpDeclHl2:declAligned.display2,
+    cmpImplHl1:implAligned.display1, cmpImplHl2:implAligned.display2
+  };
+
+  // Render all 4 panes
+  renderCmpPane('cmpDeclHl1','cmpDeclLn1',declAligned.display1);
+  renderCmpPane('cmpDeclHl2','cmpDeclLn2',declAligned.display2);
+  renderCmpPane('cmpImplHl1','cmpImplLn1',implAligned.display1);
+  renderCmpPane('cmpImplHl2','cmpImplLn2',implAligned.display2);
+
+  // Setup scroll sync
+  setupCmpScrollSync('cmpDeclScroll1','cmpDeclScroll2');
+  setupCmpScrollSync('cmpImplScroll1','cmpImplScroll2');
+  hookCmpDiffMapScroll();
+
+  // Show/hide impl row
+  const hasImpl=(implLines1.length>0||implLines2.length>0);
+  document.getElementById('cmpImplRow').style.display=hasImpl?'':'none';
+  document.getElementById('cmpResizer').style.display=hasImpl?'':'none';
+  if(!hasImpl){
+    document.getElementById('cmpDeclRow').style.flex='1';
+  }else{
+    document.getElementById('cmpDeclRow').style.flex='';
+  }
+  // Draw diff map after layout settles
+  requestAnimationFrame(()=>renderCmpDiffMap());
+}
+
+// ============================================================
+// Diff map bar (minimap of changes on right edge)
+// ============================================================
+function renderCmpDiffMap(){
+  const canvas=document.getElementById('cmpDiffMap');
+  const container=document.getElementById('cmpCodeArea');
+  if(!canvas||!container) return;
+
+  const dpr=window.devicePixelRatio||1;
+  const w=14, h=container.offsetHeight;
+  canvas.width=w*dpr;
+  canvas.height=h*dpr;
+  canvas.style.width=w+'px';
+  canvas.style.height=h+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+
+  // Get section row positions relative to container
+  const cRect=container.getBoundingClientRect();
+  const declRow=document.getElementById('cmpDeclRow');
+  const implRow=document.getElementById('cmpImplRow');
+
+  const sections=[];
+  if(declRow&&declRow.offsetHeight>0){
+    const r=declRow.getBoundingClientRect();
+    sections.push({
+      y:r.top-cRect.top, h:r.height,
+      lines:cmpDisplayData['cmpDeclHl1']||[],
+      scrollId:'cmpDeclScroll1', hlId:'cmpDeclHl1'
+    });
+  }
+  if(implRow&&implRow.style.display!=='none'&&implRow.offsetHeight>0){
+    const r=implRow.getBoundingClientRect();
+    sections.push({
+      y:r.top-cRect.top, h:r.height,
+      lines:cmpDisplayData['cmpImplHl1']||[],
+      scrollId:'cmpImplScroll1', hlId:'cmpImplHl1'
+    });
+  }
+
+  const colors={mod:'#efcb05',del:'#ff7b72',add:'#56d364',placeholder:'rgba(86,211,100,0.5)'};
+
+  for(const sec of sections){
+    if(!sec.lines.length) continue;
+    const lineH=sec.h/sec.lines.length;
+    // Draw diff lines
+    for(let i=0;i<sec.lines.length;i++){
+      const t=sec.lines[i].type;
+      const c=colors[t];
+      if(!c) continue;
+      ctx.fillStyle=c;
+      const ly=sec.y+i*lineH;
+      ctx.fillRect(0,ly,w,Math.max(lineH,1));
+    }
+    // Draw viewport indicator
+    const scrollEl=document.getElementById(sec.scrollId);
+    const hlEl=document.getElementById(sec.hlId);
+    if(scrollEl&&hlEl){
+      const contentH=hlEl.scrollHeight||1;
+      const viewH=scrollEl.clientHeight;
+      const scrollTop=scrollEl.scrollTop;
+      const vpTop=sec.y+(scrollTop/contentH)*sec.h;
+      const vpH=Math.max((viewH/contentH)*sec.h,6);
+      ctx.fillStyle='rgba(100,140,200,0.35)';
+      ctx.fillRect(0,vpTop,w,vpH);
+      ctx.strokeStyle='rgba(100,140,200,0.6)';
+      ctx.lineWidth=1;
+      ctx.strokeRect(0.5,vpTop+0.5,w-1,vpH-1);
+    }
+  }
+
+  // Store sections for click handler
+  canvas._diffSections=sections;
+}
+
+// Click + drag handler for diff map (scrollbar-like behavior)
+(function initCmpDiffMapDrag(){
+  document.addEventListener('DOMContentLoaded',()=>{
+    const canvas=document.getElementById('cmpDiffMap');
+    if(!canvas) return;
+
+    function scrollToY(clientY){
+      const sections=canvas._diffSections;
+      if(!sections||!sections.length) return;
+      const rect=canvas.getBoundingClientRect();
+      const y=clientY-rect.top;
+      for(const sec of sections){
+        if(y>=sec.y&&y<sec.y+sec.h){
+          const ratio=(y-sec.y)/sec.h;
+          const scrollEl=document.getElementById(sec.scrollId);
+          const hlEl=document.getElementById(sec.hlId);
+          if(scrollEl&&hlEl){
+            const contentH=hlEl.scrollHeight;
+            const viewH=scrollEl.clientHeight;
+            scrollEl.scrollTop=Math.max(0,ratio*contentH-viewH/2);
+          }
+          break;
+        }
+      }
+    }
+
+    canvas.addEventListener('mousedown',e=>{
+      e.preventDefault();
+      scrollToY(e.clientY);
+      function onMove(ev){scrollToY(ev.clientY);}
+      function onUp(){
+        document.removeEventListener('mousemove',onMove);
+        document.removeEventListener('mouseup',onUp);
+      }
+      document.addEventListener('mousemove',onMove);
+      document.addEventListener('mouseup',onUp);
+    });
+  });
+})();
+
+// Update diff map on scroll
+function hookCmpDiffMapScroll(){
+  ['cmpDeclScroll1','cmpImplScroll1'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&!el._diffMapHooked){
+      el.addEventListener('scroll',()=>renderCmpDiffMap());
+      el._diffMapHooked=true;
+    }
+  });
+}
+
+function renderCmpPane(hlId, lnId, displayLines){
+  const hlEl=document.getElementById(hlId);
+  const lnEl=document.getElementById(lnId);
+  // Build search highlight map from cmpHighlightData (Layer 2)
+  const highlights=cmpHighlightData[hlId]||[];
+  const searchMap=new Map();
+  for(const h of highlights){
+    if(!searchMap.has(h.displayIdx)) searchMap.set(h.displayIdx,[]);
+    const isCur=!!cmpCurMatchDisplay&&cmpCurMatchDisplay.paneId===hlId&&cmpCurMatchDisplay.displayIdx===h.displayIdx&&cmpCurMatchDisplay.start===h.start&&cmpCurMatchDisplay.end===h.end;
+    searchMap.get(h.displayIdx).push({start:h.start,end:h.end,isCur});
+  }
+  const htmlParts=[];
+  const lnParts=[];
+  for(let di=0;di<displayLines.length;di++){
+    const d=displayLines[di];
+    const cls=d.type==='placeholder'?'diff-line-placeholder':
+              d.type==='mod'?'diff-line-mod':
+              d.type==='del'?'diff-line-del':
+              d.type==='add'?'diff-line-add':'';
+    let lineHtml;
+    if(d.type==='placeholder'){
+      lineHtml='<span style="opacity:0">.</span>';
+    }else{
+      const marks=searchMap.get(di)||[];
+      if(!marks.length){
+        lineHtml=hlLine(d.content);
+      }else{
+        const sorted=[...marks].sort((a,b)=>a.start-b.start);
+        const parts=[];let pos=0;
+        for(const mk of sorted){
+          if(mk.start<pos) continue;
+          if(mk.start>pos) parts.push({text:d.content.slice(pos,mk.start),type:'plain'});
+          parts.push({text:d.content.slice(mk.start,mk.end),type:mk.isCur?'cur':'search'});
+          pos=mk.end;
+        }
+        if(pos<d.content.length) parts.push({text:d.content.slice(pos),type:'plain'});
+        lineHtml=parts.map(p=>{
+          if(p.type==='plain') return hlLine(p.text);
+          if(p.type==='cur') return `<span class="search-cur-hl">${esc(p.text)}</span>`;
+          return `<span class="search-hl">${esc(p.text)}</span>`;
+        }).join('');
+      }
+    }
+    htmlParts.push(cls?`<div class="${cls}">${lineHtml}</div>`:`<div>${lineHtml}</div>`);
+    if(d.type==='placeholder'){
+      lnParts.push(`<div class="cmp-line-num" style="opacity:0">.</div>`);
+    }else{
+      lnParts.push(`<div class="cmp-line-num">${d.lineNum}</div>`);
+    }
+  }
+  hlEl.innerHTML=htmlParts.join('');
+  lnEl.innerHTML=lnParts.join('');
+}
+
+let _cmpSyncPairs={};
+function setupCmpScrollSync(id1, id2){
+  const key=id1+'_'+id2;
+  // Clean up previous handlers
+  if(_cmpSyncPairs[key]){
+    const old=_cmpSyncPairs[key];
+    old.el1.removeEventListener('scroll',old.h1);
+    old.el2.removeEventListener('scroll',old.h2);
+  }
+  const el1=document.getElementById(id1);
+  const el2=document.getElementById(id2);
+  let syncing=false;
+  const h1=()=>{if(syncing)return;syncing=true;el2.scrollTop=el1.scrollTop;el2.scrollLeft=el1.scrollLeft;syncing=false;};
+  const h2=()=>{if(syncing)return;syncing=true;el1.scrollTop=el2.scrollTop;el1.scrollLeft=el2.scrollLeft;syncing=false;};
+  el1.addEventListener('scroll',h1);
+  el2.addEventListener('scroll',h2);
+  _cmpSyncPairs[key]={el1,el2,h1,h2};
+}
+
+// ============================================================
+// Comparison mode click tracking (side switching)
+// ============================================================
+let cmpClickStartPos=null; // {pouName, section, localLineIdx, col} - click position for search continuation
+
+function onCmpCodeClick(e){
+  const hlEl=e.target.closest('.cmp-highlight');
+  if(!hlEl) return;
+  const paneId=hlEl.id;
+  if(!CMP_PANES_SET.has(paneId)) return;
+
+  // Extract side and section from paneId
+  const newSide=paneId.endsWith('1')?'left':'right';
+  const isDecl=paneId.startsWith('cmpDecl');
+  const section=isDecl?'decl':'impl';
+
+  // Calculate click position (line index in display data)
+  const hlRect=hlEl.getBoundingClientRect();
+  const scrollEl=hlEl.parentElement; // cmp-code-scroll
+  const relY=e.clientY-hlRect.top;
+
+  // Use computed line height from CSS (font-size:12px * line-height:1.6)
+  const cs=getComputedStyle(hlEl);
+  const fontSize=parseFloat(cs.fontSize)||12;
+  const lineH=parseFloat(cs.lineHeight)||(fontSize*1.6);
+  // Account for padding-top of .cmp-highlight (8px)
+  const padTop=parseFloat(cs.paddingTop)||8;
+  const displayIdx=Math.floor((relY-padTop)/lineH);
+
+  // Get display data and convert to raw position
+  const dl=cmpDisplayData[paneId];
+  if(dl && displayIdx>=0 && displayIdx<dl.length && dl[displayIdx].type!=='placeholder'){
+    const displayLine=dl[displayIdx];
+    // Calculate column position (approximate, based on character width)
+    const padLeft=parseFloat(cs.paddingLeft)||12;
+    const relX=e.clientX-hlRect.left-padLeft+(scrollEl?scrollEl.scrollLeft:0);
+    const charWidth=fontSize*0.6; // approximate monospace character width
+    const col=Math.max(0,Math.floor(relX/charWidth));
+
+    // Store click position for search continuation
+    cmpClickStartPos={
+      pouName: cmpSelectedPou,
+      section: section,
+      localLineIdx: displayLine.lineNum-1, // convert to 0-based
+      col: col
+    };
+  }
+
+  // Handle side switching (no scroll — scroll happens on F3/F2)
+  if(newSide!==cmpActiveSide){
+    cmpActiveSide=newSide;
+    const q=document.getElementById('searchInput').value;
+    if(q) runCmpSearch(true);   // rebuild matches + highlight, but skip scroll
+    else updateCmpSideIndicator();
+  }
+}
+
+// ============================================================
+// Comparison mode search
+// ============================================================
+const CMP_PANES=['cmpDeclHl1','cmpDeclHl2','cmpImplHl1','cmpImplHl2'];
+const CMP_PANES_SET=new Set(CMP_PANES);
+const CMP_SCROLL_MAP={cmpDeclHl1:'cmpDeclScroll1',cmpDeclHl2:'cmpDeclScroll2',cmpImplHl1:'cmpImplScroll1',cmpImplHl2:'cmpImplScroll2'};
+const CMP_LN_MAP={cmpDeclHl1:'cmpDeclLn1',cmpDeclHl2:'cmpDeclLn2',cmpImplHl1:'cmpImplLn1',cmpImplHl2:'cmpImplLn2'};
+let cmpCurMatchDisplay=null; // {paneId, displayIdx, start, end} current match mapped to display
+
+// -- Helper functions --
+
+function findAllInText(text,q){
+  const results=[];
+  if(optWord){
+    const re=new RegExp('\\b'+escRe(q)+'\\b',optCase?'g':'gi');
+    let m;
+    while((m=re.exec(text))!==null) results.push({start:m.index,end:m.index+m[0].length});
+  }else{
+    const src=optCase?text:text.toLowerCase();
+    const term=optCase?q:q.toLowerCase();
+    let idx=0;
+    while(true){
+      const f=src.indexOf(term,idx);if(f<0)break;
+      results.push({start:f,end:f+term.length});
+      idx=f+1;
+    }
+  }
+  return results;
+}
+
+function cmpFindInLine_raw(line,q,li,pouName,section){
+  const matches=findAllInText(line,q);
+  for(const m of matches){
+    cmpSearchMatches.push({pouName,section,localLineIdx:li,start:m.start,end:m.end});
+  }
+}
+
+function cmpGetActivePanes(){
+  if(cmpActiveSide==='left') return {decl:'cmpDeclHl1',impl:'cmpImplHl1'};
+  return {decl:'cmpDeclHl2',impl:'cmpImplHl2'};
+}
+
+function cmpBuildHighlightData(){
+  cmpHighlightData={};
+  const q=document.getElementById('searchInput').value;
+  if(!q||q.length<1||!cmpSelectedPou) return;
+  for(const pane of CMP_PANES){
+    const dl=cmpDisplayData[pane];
+    if(!dl) continue;
+    const hits=[];
+    for(let di=0;di<dl.length;di++){
+      if(dl[di].type==='placeholder') continue;
+      const lineMatches=findAllInText(dl[di].content,q);
+      for(const m of lineMatches) hits.push({displayIdx:di,start:m.start,end:m.end});
+    }
+    if(hits.length) cmpHighlightData[pane]=hits;
+  }
+}
+
+function cmpMapRawToDisplay(match){
+  const panes=cmpGetActivePanes();
+  const paneId=match.section==='decl'?panes.decl:panes.impl;
+  const dl=cmpDisplayData[paneId];
+  if(!dl) return null;
+  const targetLineNum=match.localLineIdx+1;
+  for(let di=0;di<dl.length;di++){
+    if(dl[di].lineNum===targetLineNum) return {paneId,displayIdx:di};
+  }
+  return null;
+}
+
+function cmpFindStartIdx(){
+  if(!cmpSearchMatches.length) return -1;
+
+  // If click position is set, find the first match from that position onward
+  if(cmpClickStartPos){
+    const {pouName, section, localLineIdx, col} = cmpClickStartPos;
+    // First, find matches in the same section starting from the clicked line
+    for(let i=0; i<cmpSearchMatches.length; i++){
+      const m=cmpSearchMatches[i];
+      if(m.pouName===pouName && m.section===section){
+        if(m.localLineIdx>localLineIdx ||
+           (m.localLineIdx===localLineIdx && m.start>=col)){
+          return i;
+        }
+      }
+    }
+    // If not found in same section, find in other section of same POU
+    for(let i=0; i<cmpSearchMatches.length; i++){
+      const m=cmpSearchMatches[i];
+      if(m.pouName===pouName){
+        return i;
+      }
+    }
+  }
+
+  // Default: find first match in current POU, otherwise first match overall
+  const idx=cmpSearchMatches.findIndex(m=>m.pouName===cmpSelectedPou);
+  if(idx>=0) return idx;
+  return 0;
+}
+
+// Reverse version: find last match BEFORE click position (for Shift+F3)
+function cmpFindStartIdxReverse(){
+  if(!cmpSearchMatches.length) return -1;
+
+  if(cmpClickStartPos){
+    const {pouName, section, localLineIdx, col} = cmpClickStartPos;
+    // Find last match in same section before click position
+    for(let i=cmpSearchMatches.length-1; i>=0; i--){
+      const m=cmpSearchMatches[i];
+      if(m.pouName===pouName && m.section===section){
+        if(m.localLineIdx<localLineIdx ||
+           (m.localLineIdx===localLineIdx && m.start<col)){
+          return i;
+        }
+      }
+    }
+    // If not found, find last match in same POU
+    for(let i=cmpSearchMatches.length-1; i>=0; i--){
+      if(cmpSearchMatches[i].pouName===pouName) return i;
+    }
+  }
+
+  // Default: last match in current POU, otherwise last match overall
+  for(let i=cmpSearchMatches.length-1; i>=0; i--){
+    if(cmpSearchMatches[i].pouName===cmpSelectedPou) return i;
+  }
+  return cmpSearchMatches.length-1;
+}
+
+function updateCmpSideIndicator(){
+  const headers=document.querySelectorAll('.cmp-file-header');
+  const q=document.getElementById('searchInput').value;
+  if(headers[0]) headers[0].classList.toggle('cmp-search-active',!!q&&cmpActiveSide==='left');
+  if(headers[1]) headers[1].classList.toggle('cmp-search-active',!!q&&cmpActiveSide==='right');
+}
+
+// -- Main search function (Layer 1 + Layer 2) --
+
+function runCmpSearch(skipScroll){
+  const q=document.getElementById('searchInput').value;
+  cmpSearchMatches=[];cmpSearchCurIdx=-1;cmpHighlightData={};
+
+  if(q.length>=1&&cmpTreeResult){
+    // Layer 1: Search active side's RAW code across all POUs
+    const fileData=cmpActiveSide==='left'?file1Data:file2Data;
+    if(fileData){
+      for(const r of cmpTreeResult){
+        const code=fileData.pous[r.name]||'';
+        if(!code) continue;
+        const sp=splitPouContent(code);
+        if(sp.decl){
+          const declLines=sp.decl.split('\n');
+          for(let li=0;li<declLines.length;li++) cmpFindInLine_raw(declLines[li],q,li,r.name,'decl');
+        }
+        if(sp.impl){
+          const implLines=sp.impl.split('\n');
+          for(let li=0;li<implLines.length;li++) cmpFindInLine_raw(implLines[li],q,li,r.name,'impl');
+        }
+      }
+    }
+    if(cmpSearchMatches.length>0) cmpSearchCurIdx=cmpFindStartIdx();
+    // Consume click position when search scrolls (F2/input); keep it for F3 if skipScroll
+    if(!skipScroll) cmpClickStartPos=null;
+    // Layer 2: Highlight data for current POU (both sides)
+    cmpBuildHighlightData();
+  }
+
+  updateCmpSideIndicator();
+  updateCount();
+  renderCmpTree();
+  cmpReRenderPanes();
+  if(!skipScroll && cmpSearchCurIdx>=0) cmpScrollToMatch();
+}
+
+function cmpReRenderPanes(){
+  // Compute current match display position for highlight
+  cmpCurMatchDisplay=null;
+  if(cmpSearchCurIdx>=0){
+    const m=cmpSearchMatches[cmpSearchCurIdx];
+    if(m&&m.pouName===cmpSelectedPou){
+      const mapped=cmpMapRawToDisplay(m);
+      if(mapped) cmpCurMatchDisplay={paneId:mapped.paneId,displayIdx:mapped.displayIdx,start:m.start,end:m.end};
+    }
+  }
+  for(const pane of CMP_PANES){
+    const dl=cmpDisplayData[pane];
+    if(dl) renderCmpPane(pane,CMP_LN_MAP[pane],dl);
+  }
+}
+
+// -- Navigation (POU-crossing) --
+
+function cmpNeedReanchor(){
+  if(cmpSearchCurIdx<0) return false;
+  const cur=cmpSearchMatches[cmpSearchCurIdx];
+  if(!cur) return false;
+  return cur.pouName!==cmpSelectedPou;
+}
+
+function cmpReanchor(forward){
+  if(!cmpTreeResult) return;
+  const pouIdx=cmpTreeResult.findIndex(r=>r.name===cmpSelectedPou);
+  if(forward){
+    const idx=cmpSearchMatches.findIndex(m=>m.pouName===cmpSelectedPou);
+    if(idx>=0){cmpSearchCurIdx=idx;return;}
+    for(let pi=pouIdx+1;pi<cmpTreeResult.length;pi++){
+      const ni=cmpSearchMatches.findIndex(m=>m.pouName===cmpTreeResult[pi].name);
+      if(ni>=0){cmpSearchCurIdx=ni;return;}
+    }
+    cmpSearchCurIdx=0;
+  }else{
+    let lastIdx=-1;
+    for(let i=cmpSearchMatches.length-1;i>=0;i--){
+      if(cmpSearchMatches[i].pouName===cmpSelectedPou){lastIdx=i;break;}
+    }
+    if(lastIdx>=0){cmpSearchCurIdx=lastIdx;return;}
+    for(let pi=pouIdx-1;pi>=0;pi--){
+      for(let i=cmpSearchMatches.length-1;i>=0;i--){
+        if(cmpSearchMatches[i].pouName===cmpTreeResult[pi].name){cmpSearchCurIdx=i;return;}
+      }
+    }
+    cmpSearchCurIdx=cmpSearchMatches.length-1;
+  }
+}
+
+function cmpNextMatch(){
+  if(!cmpSearchMatches.length) return;
+  // If click position is set, jump to the first match after that position
+  if(cmpClickStartPos){
+    const startIdx=cmpFindStartIdx();
+    cmpClickStartPos=null; // consume click position
+    if(startIdx>=0){cmpSearchCurIdx=startIdx;cmpJumpTo();return;}
+  }
+  if(cmpNeedReanchor()){cmpReanchor(true);cmpJumpTo();return;}
+  cmpSearchCurIdx=(cmpSearchCurIdx+1)%cmpSearchMatches.length;
+  cmpJumpTo();
+}
+
+function cmpPrevMatch(){
+  if(!cmpSearchMatches.length) return;
+  // If click position is set, jump to the last match before that position
+  if(cmpClickStartPos){
+    const startIdx=cmpFindStartIdxReverse();
+    cmpClickStartPos=null; // consume click position
+    if(startIdx>=0){cmpSearchCurIdx=startIdx;cmpJumpTo();return;}
+  }
+  if(cmpNeedReanchor()){cmpReanchor(false);cmpJumpTo();return;}
+  cmpSearchCurIdx=(cmpSearchCurIdx-1+cmpSearchMatches.length)%cmpSearchMatches.length;
+  cmpJumpTo();
+}
+
+function cmpJumpTo(){
+  if(cmpSearchCurIdx<0) return;
+  const m=cmpSearchMatches[cmpSearchCurIdx];
+  if(!m) return;
+  // Switch POU if needed
+  if(m.pouName!==cmpSelectedPou){
+    cmpSelectedPou=m.pouName;
+    renderCmpTree();
+    renderCmpCode(m.pouName);
+    cmpBuildHighlightData();
+  }
+  updateCount();
+  cmpReRenderPanes();
+  requestAnimationFrame(()=>cmpScrollToMatch());
+}
+
+function cmpScrollToMatch(){
+  if(cmpSearchCurIdx<0) return;
+  const m=cmpSearchMatches[cmpSearchCurIdx];
+  if(!m) return;
+  const mapped=cmpMapRawToDisplay(m);
+  if(!mapped) return;
+  const scrollId=CMP_SCROLL_MAP[mapped.paneId];
+  const scroll=document.getElementById(scrollId);
+  const hl=document.getElementById(mapped.paneId);
+  if(!scroll||!hl) return;
+  const dl=cmpDisplayData[mapped.paneId];
+  const lineCount=dl?dl.length:1;
+  const lh=lineCount>0?hl.scrollHeight/lineCount:20;
+  const targetY=mapped.displayIdx*lh;
+  const viewH=scroll.clientHeight;
+  if(targetY<scroll.scrollTop+40||targetY+lh>scroll.scrollTop+viewH-40){
+    scroll.scrollTop=Math.max(0,targetY-viewH/3);
+  }
 }
 
 // ============================================================
