@@ -85,3 +85,17 @@ PLCの現場やオフィスで、専用のIDE（PLC Control）を立ち上げる
 - **バイナリ解析**: `.pro` ファイルのバイナリツリー構造を解析し、独自のフォルダ階層を復元します。
 - **差分アルゴリズム**: LCS（最長共通部分列）ベースの行レベル差分検出。
 - **文字コード対応**: 日本語環境（CP932/Shift-JIS）から UTF-8 への自動変換機能を内蔵。
+
+---
+
+## ⚠️ 免責事項 / Disclaimer
+
+### 日本語
+本ツールは有志による非公式のプロジェクトであり、Beckhoff Automation社とは一切関係ありません。
+- **TwinCAT 2** および **Beckhoff** は、Beckhoff Automation GmbH の登録商標です。
+- 本ツールを使用して生じた、いかなる直接的・間接的な損害（データの損失、機器の故障、業務の中断等）についても、作者およびその所属組織は一切の責任を負いません。利用者の責任においてご使用ください。
+
+### English
+This is an unofficial project and is not affiliated with, sponsored by, or endorsed by Beckhoff Automation.
+- **TwinCAT 2** and **Beckhoff** are registered trademarks of Beckhoff Automation GmbH.
+- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. In no event shall the authors or copyright holders be liable for any claim, damages, or other liability arising from, out of, or in connection with the software or the use or other dealings in the software.
