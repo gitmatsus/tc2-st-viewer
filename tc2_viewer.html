@@ -423,6 +423,12 @@ let cmpActiveSide='left';    // 'left'|'right' active search side
 let cmpHighlightData={};     // {paneId: [{displayIdx,start,end}]} highlight data for current POU
 
 // ============================================================
+// Performance caches
+// ============================================================
+const _cmtMapCache=new Map(); // tabId → comment map array (invalidated on file load)
+const _diffCache=new Map();   // "lines1\x00lines2" → {display1, display2} (invalidated on cmp file load)
+
+// ============================================================
 // Diff engine (LCS-based)
 // ============================================================
 
@@ -458,6 +464,21 @@ function diffLines(lines1, lines2){
     }
   }
   return ops;
+}
+
+/**
+ * Cache-aware wrapper: compute diffLines + buildAlignedDisplay, caching by content key.
+ * @param {string[]} lines1
+ * @param {string[]} lines2
+ * @returns {{display1: Array, display2: Array}}
+ */
+function getDiffAligned(lines1, lines2){
+  const key=lines1.join('\n')+'\x00'+lines2.join('\n');
+  if(_diffCache.has(key)) return _diffCache.get(key);
+  const ops=diffLines(lines1,lines2);
+  const result=buildAlignedDisplay(ops,lines1,lines2);
+  _diffCache.set(key,result);
+  return result;
 }
 
 /**
@@ -537,13 +558,15 @@ function comparePouTrees(data1, data2){
         status='unchanged';
       }else{
         status='modified';
-        // Count diff lines (mod/del/add) for display
+        // Count diff lines (mod/del/add) for display — reuse getDiffAligned() cache
         const sp1=splitPouContent(data1.pous[name]);
         const sp2=splitPouContent(data2.pous[name]);
-        const declOps=diffLines(sp1.decl?sp1.decl.split('\n'):[],sp2.decl?sp2.decl.split('\n'):[]);
-        const implOps=diffLines(sp1.impl?sp1.impl.split('\n'):[],sp2.impl?sp2.impl.split('\n'):[]);
-        for(const op of declOps) if(op.type!=='match') diffCount++;
-        for(const op of implOps) if(op.type!=='match') diffCount++;
+        const declAl=getDiffAligned(sp1.decl?sp1.decl.split('\n'):[],sp2.decl?sp2.decl.split('\n'):[]);
+        const implAl=getDiffAligned(sp1.impl?sp1.impl.split('\n'):[],sp2.impl?sp2.impl.split('\n'):[]);
+        for(const d of declAl.display1){if(d.type==='mod') diffCount+=2; else if(d.type==='del') diffCount++;}
+        for(const d of declAl.display2) if(d.type==='add') diffCount++;
+        for(const d of implAl.display1){if(d.type==='mod') diffCount+=2; else if(d.type==='del') diffCount++;}
+        for(const d of implAl.display2) if(d.type==='add') diffCount++;
       }
     }else if(in1){
       status='deleted';
@@ -723,7 +746,8 @@ function splitPouContent(code){
 function renderHighlightPane(code,hlId,lineOffset,tabId){
   const lines=code.split('\n');
   const fullCode=PROJECT_DATA.pous[tabId]||'';
-  const cmtMap=buildCommentMap(fullCode);
+  if(!_cmtMapCache.has(tabId)) _cmtMapCache.set(tabId,buildCommentMap(fullCode));
+  const cmtMap=_cmtMapCache.get(tabId);
 
   // Search match map (filter to this pane's line range)
   const lineMap=new Map();
@@ -862,8 +886,8 @@ function buildSidebar(){
 
 function sbFile(name){
   const hits=searchMatches.filter(m=>m.tabId===name).length;
-  return `<div class="tree-file${activeTabId===name?' active':''}" onclick="openTab('${name}')">
-    <span class="prg-badge">PRG</span>${name}
+  return `<div class="tree-file${activeTabId===name?' active':''}" onclick='openTab(${JSON.stringify(name)})'>
+    <span class="prg-badge">PRG</span>${esc(name)}
     ${hits>0?`<span class="hit-badge">${hits}</span>`:''}
   </div>`;
 }
@@ -886,7 +910,7 @@ function buildTabs(){
   let h='';
   for(const name of getAllFiles()){
     const hits=searchMatches.filter(m=>m.tabId===name).length;
-    h+=`<div class="tab${activeTabId===name?' active':''}" onclick="openTab('${name}')">${name}${hits>0?`<span class="hit-count">${hits}</span>`:''}</div>`;
+    h+=`<div class="tab${activeTabId===name?' active':''}" onclick='openTab(${JSON.stringify(name)})'>${esc(name)}${hits>0?`<span class="hit-count">${hits}</span>`:''}</div>`;
   }
   document.getElementById('tabBar').innerHTML=h;
 }
@@ -919,6 +943,19 @@ function openTab(name){
 // ============================================================
 // File open — CP932 decoding fix
 // ============================================================
+
+// Shared helper: read a .pro/.st/.exp file blob, parse it, call onSuccess(parsed, filename)
+function readProFileBlob(file, onSuccess){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const parsed=parseProFile(e.target.result,file.name);
+      onSuccess(parsed,file.name);
+    }catch(err){showToast('⚠️ 読み込みエラー: '+err.message);}
+  };
+  reader.readAsArrayBuffer(file);
+}
+
 function loadProFile(event){
   const file=event.target.files[0];
   if(file) loadFileFromBlob(file);
@@ -926,22 +963,18 @@ function loadProFile(event){
 }
 
 function loadFileFromBlob(file){
-  const reader=new FileReader();
-  reader.onload=e=>{
-    try{
-      const parsed=parseProFile(e.target.result,file.name);
-      PROJECT_DATA=parsed;
-      searchMatches=[];searchCurIdx=-1;dblWord='';
-      document.getElementById('searchInput').value='';
-      document.getElementById('searchCount').textContent='';
-      const first=getAllFiles()[0];
-      activeTabId=first;cursorLineIdx=0;
-      buildTabs();buildSidebar();renderCode(first);
-      hideEmptyState();
-      showToast('📂 '+file.name+' を読み込みました');
-    }catch(err){showToast('⚠️ 読み込みエラー: '+err.message);}
-  };
-  reader.readAsArrayBuffer(file);
+  readProFileBlob(file,(parsed,name)=>{
+    PROJECT_DATA=parsed;
+    _cmtMapCache.clear();
+    searchMatches=[];searchCurIdx=-1;dblWord='';
+    document.getElementById('searchInput').value='';
+    document.getElementById('searchCount').textContent='';
+    const first=getAllFiles()[0];
+    activeTabId=first;cursorLineIdx=0;
+    buildTabs();buildSidebar();renderCode(first);
+    hideEmptyState();
+    showToast('📂 '+name+' を読み込みました');
+  });
 }
 
 // Drag & Drop support
@@ -1026,23 +1059,19 @@ document.addEventListener('DOMContentLoaded',()=>{
     // Determine which file slot by drop zone position
     const rect1=cmpDropZone1.getBoundingClientRect();
     const which=(e.clientX<=rect1.right)?1:2;
-    const reader=new FileReader();
-    reader.onload=ev=>{
-      try{
-        const parsed=parseProFile(ev.target.result,file.name);
-        if(which===1){
-          file1Data={tree:parsed.tree,pous:parsed.pous,filename:file.name};
-          document.getElementById('cmpFile1Name').textContent=file.name;
-        }else{
-          file2Data={tree:parsed.tree,pous:parsed.pous,filename:file.name};
-          document.getElementById('cmpFile2Name').textContent=file.name;
-        }
-        showToast('📂 '+file.name+' をファイル'+which+'に読み込みました');
-        updateCmpDropOverlay();
-        if(file1Data&&file2Data) runComparison();
-      }catch(err){showToast('⚠️ 読み込みエラー: '+err.message);}
-    };
-    reader.readAsArrayBuffer(file);
+    readProFileBlob(file,(parsed,name)=>{
+      if(which===1){
+        file1Data={tree:parsed.tree,pous:parsed.pous,filename:name};
+        document.getElementById('cmpFile1Name').textContent=name;
+      }else{
+        file2Data={tree:parsed.tree,pous:parsed.pous,filename:name};
+        document.getElementById('cmpFile2Name').textContent=name;
+      }
+      _diffCache.clear();
+      showToast('📂 '+name+' をファイル'+which+'に読み込みました');
+      updateCmpDropOverlay();
+      if(file1Data&&file2Data) runComparison();
+    });
   });
 });
 
@@ -1793,23 +1822,19 @@ function loadCmpFile(event, which){
   const file=event.target.files[0];
   if(!file) return;
   event.target.value='';
-  const reader=new FileReader();
-  reader.onload=e=>{
-    try{
-      const parsed=parseProFile(e.target.result,file.name);
-      if(which===1){
-        file1Data={tree:parsed.tree,pous:parsed.pous,filename:file.name};
-        document.getElementById('cmpFile1Name').textContent=file.name;
-      }else{
-        file2Data={tree:parsed.tree,pous:parsed.pous,filename:file.name};
-        document.getElementById('cmpFile2Name').textContent=file.name;
-      }
-      showToast('📂 '+file.name+' を読み込みました');
-      if(typeof updateCmpDropOverlay==='function') updateCmpDropOverlay();
-      if(file1Data&&file2Data) runComparison();
-    }catch(err){showToast('⚠️ 読み込みエラー: '+err.message);}
-  };
-  reader.readAsArrayBuffer(file);
+  readProFileBlob(file,(parsed,name)=>{
+    if(which===1){
+      file1Data={tree:parsed.tree,pous:parsed.pous,filename:name};
+      document.getElementById('cmpFile1Name').textContent=name;
+    }else{
+      file2Data={tree:parsed.tree,pous:parsed.pous,filename:name};
+      document.getElementById('cmpFile2Name').textContent=name;
+    }
+    _diffCache.clear();
+    showToast('📂 '+name+' を読み込みました');
+    if(typeof updateCmpDropOverlay==='function') updateCmpDropOverlay();
+    if(file1Data&&file2Data) runComparison();
+  });
 }
 
 function runComparison(){
@@ -1894,14 +1919,12 @@ function renderCmpCode(name){
   // Diff for declaration parts
   const declLines1=sp1.decl?sp1.decl.split('\n'):[];
   const declLines2=sp2.decl?sp2.decl.split('\n'):[];
-  const declOps=diffLines(declLines1,declLines2);
-  const declAligned=buildAlignedDisplay(declOps,declLines1,declLines2);
+  const declAligned=getDiffAligned(declLines1,declLines2);
 
   // Diff for implementation parts
   const implLines1=sp1.impl?sp1.impl.split('\n'):[];
   const implLines2=sp2.impl?sp2.impl.split('\n'):[];
-  const implOps=diffLines(implLines1,implLines2);
-  const implAligned=buildAlignedDisplay(implOps,implLines1,implLines2);
+  const implAligned=getDiffAligned(implLines1,implLines2);
 
   // Save display data for search
   cmpDisplayData={
