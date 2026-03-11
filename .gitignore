@@ -1,0 +1,7 @@
+# Test data / binary files
+*.pro
+*.DFR
+PLC/
+
+# Claude Code local settings
+.claude/

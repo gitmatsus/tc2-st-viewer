@@ -24,17 +24,23 @@ header{display:flex;align-items:center;padding:8px 14px;background:var(--surface
 .btn-open{padding:5px 12px;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--text-dim);cursor:pointer;font-size:12px;font-family:'Syne',sans-serif;font-weight:600;transition:all .15s;white-space:nowrap}
 .btn-open:hover{border-color:var(--accent);color:var(--accent)}
 
-.search-bar{display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;flex:1;min-width:200px;max-width:560px}
-.search-bar input{background:transparent;border:none;outline:none;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;flex:1;min-width:80px}
+.search-area{display:flex;align-items:center;gap:8px;flex:1;min-width:0;overflow:hidden}
+.search-bar{display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;flex-shrink:0}
+.search-bar input{background:transparent;border:none;outline:none;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;width:12em}
 .search-bar input::placeholder{color:var(--text-dim)}
-.search-opts{display:flex;gap:3px}
+.search-opts{display:flex;gap:3px;flex-shrink:0}
 .search-opt{padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;background:transparent;border:1px solid var(--border);color:var(--text-dim);transition:all .15s;font-family:'Syne',sans-serif}
 .search-opt.on{background:rgba(0,217,255,.15);border-color:var(--accent);color:var(--accent)}
-.search-count{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text-dim);white-space:nowrap;min-width:64px}
-.search-nav{display:flex;gap:2px}
+.search-count{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text-dim);white-space:nowrap;min-width:40px}
+.search-nav{display:flex;gap:2px;flex-shrink:0}
 .search-nav button{padding:2px 8px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text-dim);cursor:pointer;font-size:12px;transition:all .15s}
 .search-nav button:hover{border-color:var(--accent);color:var(--accent)}
-.search-hint{font-size:10px;color:var(--text-dim);white-space:nowrap;font-family:'JetBrains Mono',monospace}
+.search-hint{font-size:10px;color:var(--text-dim);white-space:nowrap;font-family:'JetBrains Mono',monospace;overflow:hidden;text-overflow:ellipsis;min-width:0;flex-shrink:1}
+.cmp-diff-nav{display:none;align-items:center;gap:5px;white-space:nowrap;background:rgba(239,203,5,.1);border:1px solid rgba(239,203,5,.3);border-radius:6px;padding:3px 8px;margin-left:auto;flex-shrink:0}
+.cmp-diff-nav-label{font-size:10px;font-weight:700;color:#efcb05;letter-spacing:.04em}
+.cmp-diff-nav button{padding:2px 8px;background:transparent;border:1px solid rgba(239,203,5,.35);border-radius:4px;color:#efcb05;cursor:pointer;font-size:12px;transition:all .15s}
+.cmp-diff-nav button:hover{background:rgba(239,203,5,.15);border-color:#efcb05}
+.cmp-diff-count{font-size:11px;font-family:'JetBrains Mono',monospace;color:#efcb05;white-space:nowrap}
 
 .toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface2);border:1px solid var(--accent);color:var(--accent);padding:6px 18px;border-radius:20px;font-size:12px;font-family:'JetBrains Mono',monospace;pointer-events:none;opacity:0;transition:all .25s;z-index:999}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -61,6 +67,14 @@ header{display:flex;align-items:center;padding:8px 14px;background:var(--surface
 .tree-file .hit-badge{font-size:9px;background:var(--search-cur);color:#000;border-radius:3px;padding:0 4px;font-weight:700;margin-left:auto}
 
 .editor-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.editor-panes{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.pane-decl,.pane-impl{display:flex;flex-direction:column;overflow:hidden;min-height:60px}
+.pane-decl{height:28%}
+.pane-impl{flex:1}
+.pane-decl.full{flex:1;height:auto}
+.pane-label{font-size:10px;padding:2px 8px;color:var(--text-dim);background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;user-select:none;font-family:'JetBrains Mono',monospace;letter-spacing:.06em}
+.pane-resizer{height:5px;background:var(--border);cursor:ns-resize;flex-shrink:0;transition:background .15s}
+.pane-resizer:hover,.pane-resizer.dragging{background:var(--accent)}
 .editor-wrapper{flex:1;display:flex;overflow:hidden;position:relative}
 .line-numbers{width:50px;background:var(--surface);border-right:1px solid var(--border);padding:16px 0;overflow:hidden;flex-shrink:0;user-select:none}
 .line-num{height:calc(1em * var(--line-h));display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text-dim);opacity:.45;line-height:var(--line-h)}
@@ -68,9 +82,10 @@ header{display:flex;align-items:center;padding:8px 14px;background:var(--surface
 .line-num.cursor-line{opacity:1;color:var(--accent)}
 
 .editor-scroll{flex:1;overflow:auto;position:relative}
-.highlight-layer{position:absolute;top:0;left:0;padding:16px;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:var(--line-h);white-space:pre;pointer-events:none;min-width:100%;word-break:normal;overflow-wrap:normal}
-#codeTextarea{position:absolute;top:0;left:0;width:100%;height:100%;padding:16px;background:transparent;color:transparent;caret-color:var(--accent);border:none;outline:none;resize:none;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:var(--line-h);white-space:pre;overflow:hidden;tab-size:2;cursor:text;-webkit-user-select:text;user-select:text}
-#codeTextarea::selection{background:rgba(0,217,255,0.20)}
+.code-content{position:relative;min-height:100%}
+.highlight-layer{padding:16px;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:var(--line-h);white-space:pre;pointer-events:none;min-width:100%;word-break:normal;overflow-wrap:normal;tab-size:2}
+#declTextarea,#implTextarea{position:absolute;top:0;left:0;width:100%;height:100%;padding:16px;background:transparent;color:transparent;caret-color:var(--accent);border:none;outline:none;resize:none;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:var(--line-h);white-space:pre;overflow:hidden;tab-size:2;cursor:text;-webkit-user-select:text;user-select:text}
+#declTextarea::selection,#implTextarea::selection{background:rgba(0,217,255,0.20)}
 
 .kw{color:var(--kw);font-weight:500}
 .tc2kw{color:var(--tc2kw);font-weight:500}
@@ -93,10 +108,93 @@ header{display:flex;align-items:center;padding:8px 14px;background:var(--surface
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:var(--text-dim)}
 
-#emptyState{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-dim);font-family:'JetBrains Mono',monospace;gap:14px;background:var(--surface2);z-index:5;pointer-events:none}
-.empty-icon{font-size:52px;opacity:.25}
-.empty-title{font-size:14px;font-weight:600;letter-spacing:.06em;color:var(--text)}
+#emptyState{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-dim);font-family:'JetBrains Mono',monospace;gap:14px;background:var(--surface2);z-index:5;transition:background .2s,border-color .2s}
+#emptyState.drag-over{background:var(--surface);outline:2px dashed var(--accent);outline-offset:-8px}
+#emptyState.drag-over .empty-icon{opacity:.6}
+#emptyState.drag-over .empty-title{color:var(--accent)}
+.empty-icon{font-size:52px;opacity:.25;transition:opacity .2s}
+.empty-title{font-size:14px;font-weight:600;letter-spacing:.06em;color:var(--text);transition:color .2s}
 .empty-sub{font-size:11px;opacity:.6}
+
+/* ============================================================
+   Comparison mode styles (WinMerge-inspired, dark theme)
+   ============================================================ */
+.mode-toggle{display:flex;gap:2px;margin-right:4px}
+.mode-btn{padding:4px 10px;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--text-dim);cursor:pointer;font-size:11px;font-family:'Syne',sans-serif;font-weight:600;transition:all .15s}
+.mode-btn.active{background:rgba(0,217,255,.15);border-color:var(--accent);color:var(--accent)}
+.mode-btn:hover:not(.active){color:var(--text);border-color:var(--text-dim)}
+
+/* Comparison container (hidden by default) */
+.comparison-container{display:none;flex:1;overflow:hidden}
+.comparison-container.active{display:flex}
+
+/* Left pane: tree diff */
+.cmp-left{width:240px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.cmp-left-header{padding:8px 12px 6px;font-size:10px;font-weight:600;letter-spacing:.12em;color:var(--text-dim);text-transform:uppercase;border-bottom:1px solid var(--border)}
+.cmp-tree{flex:1;overflow-y:auto;padding:4px 0}
+.cmp-tree-item{display:flex;align-items:center;gap:5px;padding:4px 12px 4px 12px;font-size:11px;font-family:'JetBrains Mono',monospace;cursor:pointer;color:var(--text-dim);transition:all .1s}
+.cmp-tree-item.in-folder{padding-left:22px}
+.cmp-tree-item:hover{background:var(--surface2);color:var(--text)}
+.cmp-tree-item.active{color:var(--accent);background:rgba(0,217,255,.07)}
+.cmp-tree-item .cmp-status{font-size:9px;font-weight:700;border-radius:3px;padding:0 5px;margin-left:auto;flex-shrink:0}
+.cmp-tree-item .prg-badge{font-size:9px;font-weight:700;background:rgba(121,192,255,.15);color:var(--type);border-radius:3px;padding:0 4px;flex-shrink:0}
+.cmp-tree-item .cmp-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmp-status-modified{background:rgba(239,203,5,.25);color:#efcb05}
+.cmp-status-added{background:rgba(86,211,100,.25);color:#56d364}
+.cmp-status-deleted{background:rgba(255,123,114,.25);color:#ff7b72}
+.cmp-status-unchanged{background:rgba(125,133,144,.15);color:var(--text-dim)}
+
+/* Right pane: code comparison */
+.cmp-right{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.cmp-file-headers{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.cmp-file-header{flex:1;padding:4px 12px;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text-dim);background:var(--surface);display:flex;align-items:center;gap:8px}
+.cmp-file-header:first-child{border-right:1px solid var(--border)}
+.cmp-file-header .cmp-file-btn{padding:3px 8px;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--text-dim);cursor:pointer;font-size:10px;font-family:'Syne',sans-serif;font-weight:600;transition:all .15s}
+.cmp-file-header .cmp-file-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Code pane rows (decl / impl) */
+.cmp-code-area{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.cmp-drop-overlay{position:absolute;inset:0;display:flex;z-index:10;pointer-events:none}
+.cmp-drop-overlay.hidden{display:none}
+.cmp-section-row{flex:1;display:flex;flex-direction:row;overflow:hidden;min-height:60px;position:relative}
+#cmpDeclRow{flex:0 0 auto;height:220px}
+#cmpImplRow{flex:1}
+.cmp-section-row+.cmp-section-row{border-top:1px solid var(--border)}
+.cmp-pane{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.cmp-pane+.cmp-pane{border-left:1px solid var(--border)}
+.cmp-pane-label{font-size:10px;padding:2px 8px;color:var(--text-dim);background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;user-select:none;font-family:'JetBrains Mono',monospace;letter-spacing:.06em}
+.cmp-pane-body{flex:1;display:flex;overflow:hidden}
+.cmp-line-numbers{width:42px;background:var(--surface);border-right:1px solid var(--border);padding:8px 0;overflow:hidden;flex-shrink:0;user-select:none}
+.cmp-line-num{height:calc(1em * var(--line-h));display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-dim);opacity:.45;line-height:var(--line-h)}
+.cmp-code-scroll{flex:1;overflow:auto;position:relative}
+.cmp-highlight{padding:8px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:var(--line-h);white-space:pre;min-width:100%;word-break:normal;overflow-wrap:normal;tab-size:2}
+.cmp-highlight>div{height:calc(1em * var(--line-h));overflow:hidden}
+
+/* Diff line colors (WinMerge-inspired for dark theme) */
+.diff-line-mod{background:rgba(239,203,5,.12)}
+.diff-line-del{background:rgba(255,123,114,.12)}
+.diff-line-add{background:rgba(86,211,100,.12)}
+.diff-line-placeholder{background:rgba(128,128,128,.06)}
+
+/* Comparison resizer between decl/impl */
+.cmp-resizer{height:4px;background:var(--border);cursor:ns-resize;flex-shrink:0;transition:background .15s}
+.cmp-resizer:hover,.cmp-resizer.dragging{background:var(--accent)}
+
+/* Diff map bar (minimap of changes) */
+.cmp-diff-map{position:absolute;right:0;top:0;bottom:0;width:14px;cursor:pointer;z-index:5;background:var(--surface)}
+
+/* Comparison empty state & drop zones */
+.cmp-empty{display:flex;align-items:center;justify-content:center;flex:1;color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--surface2)}
+.cmp-drop-zone{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-dim);font-family:'JetBrains Mono',monospace;gap:10px;background:var(--surface2);pointer-events:auto;transition:background .2s,outline-color .2s}
+.cmp-drop-zone+.cmp-drop-zone{border-left:1px solid var(--border)}
+.cmp-drop-zone.drag-over{background:var(--surface);outline:2px dashed var(--accent);outline-offset:-6px}
+.cmp-drop-zone.drag-over .cmp-drop-icon{opacity:.6}
+.cmp-drop-zone.drag-over .cmp-drop-title{color:var(--accent)}
+.cmp-drop-icon{font-size:40px;opacity:.25;transition:opacity .2s}
+.cmp-drop-title{font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--text);transition:color .2s}
+.cmp-drop-sub{font-size:10px;opacity:.6}
+.cmp-hit-badge{font-size:9px;background:var(--search-cur);color:#000;border-radius:3px;padding:0 4px;font-weight:700;margin-left:auto}
+.cmp-file-header.cmp-search-active{border-bottom:2px solid var(--accent)}
 </style>
 </head>
 <body>
@@ -107,41 +205,165 @@ header{display:flex;align-items:center;padding:8px 14px;background:var(--surface
     TwinCAT <span class="v2">v2</span>&nbsp;ST Viewer
   </div>
   <span class="readonly-badge">🔒 読み取り専用</span>
-  <label class="btn-open">
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="modeView" onclick="switchMode('view')">ビューア</button>
+    <button class="mode-btn" id="modeCompare" onclick="switchMode('compare')">比較</button>
+  </div>
+  <label class="btn-open" id="btnOpenSingle">
     📂 ファイルを開く
     <input type="file" accept=".pro,.st,.exp" style="display:none" onchange="loadProFile(event)">
   </label>
-  <div class="search-bar">
-    <span style="color:var(--text-dim);font-size:12px">🔍</span>
-    <input type="text" id="searchInput" placeholder="検索… (F2で選択範囲を取込)" oninput="onSearchInput()" onkeydown="onSearchKey(event)">
-    <div class="search-opts">
-      <button class="search-opt" id="optCase" onclick="toggleOpt('optCase')" title="大文字・小文字を区別">Aa</button>
-      <button class="search-opt" id="optWord" onclick="toggleOpt('optWord')" title="単語単位で検索">W</button>
+  <div class="search-area">
+    <div class="search-bar">
+      <span style="color:var(--text-dim);font-size:12px">🔍</span>
+      <input type="text" id="searchInput" placeholder="検索… (F2で選択範囲を取込)" oninput="onSearchInput()" onkeydown="onSearchKey(event)">
+      <div class="search-opts">
+        <button class="search-opt" id="optCase" onclick="toggleOpt('optCase')" title="大文字・小文字を区別">Aa</button>
+        <button class="search-opt" id="optWord" onclick="toggleOpt('optWord')" title="単語単位で検索">W</button>
+      </div>
+      <span class="search-count" id="searchCount"></span>
+      <div class="search-nav">
+        <button onclick="prevMatch()" title="前へ (Shift+F3)">▲</button>
+        <button onclick="nextMatch()" title="次へ (F3)">▼</button>
+      </div>
     </div>
-    <span class="search-count" id="searchCount"></span>
-    <div class="search-nav">
-      <button onclick="prevMatch()" title="前へ (Shift+F2)">▲</button>
-      <button onclick="nextMatch()" title="次へ (F3)">▼</button>
+    <span class="search-hint">F2:検索取込　F3:次へ　Shift+F3:前へ</span>
+    <div class="cmp-diff-nav" id="cmpDiffNav">
+      <span class="cmp-diff-nav-label">差分</span>
+      <span class="cmp-diff-count" id="cmpDiffCount"></span>
+      <button onclick="cmpPrevDiff()" title="前の変更箇所">▲</button>
+      <button onclick="cmpNextDiff()" title="次の変更箇所">▼</button>
     </div>
   </div>
-  <span class="search-hint">ダブルクリック:単語選択　F2:検索取込　F3:次へ　Shift+F2:前へ</span>
 </header>
 
 <div class="tab-bar" id="tabBar"></div>
 
-<div class="main">
+<div class="main" id="mainArea">
   <div class="sidebar" id="sidebar"></div>
-  <div class="editor-area">
-    <div class="editor-wrapper">
-      <div class="line-numbers" id="lineNumbers"></div>
-      <div class="editor-scroll" id="editorScroll" onscroll="syncScroll()">
-        <div class="highlight-layer" id="highlightLayer"></div>
-        <div id="emptyState"><div class="empty-icon">📂</div><div class="empty-title">ファイルを開いてください</div><div class="empty-sub">.pro / .st / .exp ファイルに対応</div></div>
-        <textarea id="codeTextarea" readonly spellcheck="false" autocomplete="off"
-          ondblclick="onDblClick(event)"
-          onmouseup="onMouseUp(event)"
-          onclick="onEditorClick(event)"
-          onkeydown="onTextareaKey(event)"></textarea>
+  <div class="editor-area" id="editorArea">
+    <div class="editor-panes">
+      <!-- 宣言部（上段） -->
+      <div class="pane-decl full" id="paneDecl">
+        <div class="pane-label" id="declLabel">宣言部</div>
+        <div class="editor-wrapper">
+          <div class="line-numbers" id="declLineNumbers"></div>
+          <div class="editor-scroll" id="declScroll" onscroll="syncScrollDecl()">
+            <div class="code-content">
+              <div class="highlight-layer" id="declHighlight"></div>
+              <textarea id="declTextarea" readonly spellcheck="false" autocomplete="off"
+                ondblclick="onDblClick(event,'decl')"
+                onmouseup="onMouseUp(event,'decl')"
+                onclick="onEditorClick(event,'decl')"
+                onkeydown="onTextareaKey(event)"></textarea>
+            </div>
+            <div id="emptyState"><div class="empty-icon">📂</div><div class="empty-title">ファイルを開いてください</div><div class="empty-sub">.pro / .st / .exp ファイルに対応</div></div>
+          </div>
+        </div>
+      </div>
+      <!-- リサイズハンドル -->
+      <div class="pane-resizer" id="paneResizer" style="display:none"></div>
+      <!-- 実装部（下段） -->
+      <div class="pane-impl" id="paneImpl" style="display:none">
+        <div class="pane-label">実装部</div>
+        <div class="editor-wrapper">
+          <div class="line-numbers" id="implLineNumbers"></div>
+          <div class="editor-scroll" id="implScroll" onscroll="syncScrollImpl()">
+            <div class="code-content">
+              <div class="highlight-layer" id="implHighlight"></div>
+              <textarea id="implTextarea" readonly spellcheck="false" autocomplete="off"
+                ondblclick="onDblClick(event,'impl')"
+                onmouseup="onMouseUp(event,'impl')"
+                onclick="onEditorClick(event,'impl')"
+                onkeydown="onTextareaKey(event)"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comparison mode container -->
+  <div class="comparison-container" id="cmpContainer">
+    <div class="cmp-left">
+      <div class="cmp-left-header">比較結果</div>
+      <div class="cmp-tree" id="cmpTree"></div>
+    </div>
+    <div class="cmp-right">
+      <div class="cmp-file-headers">
+        <div class="cmp-file-header">
+          <label class="cmp-file-btn">📂 ファイル1
+            <input type="file" accept=".pro,.st,.exp" style="display:none" onchange="loadCmpFile(event,1)">
+          </label>
+          <span id="cmpFile1Name">未選択</span>
+        </div>
+        <div class="cmp-file-header">
+          <label class="cmp-file-btn">📂 ファイル2
+            <input type="file" accept=".pro,.st,.exp" style="display:none" onchange="loadCmpFile(event,2)">
+          </label>
+          <span id="cmpFile2Name">未選択</span>
+        </div>
+      </div>
+      <div class="cmp-code-area" id="cmpCodeArea">
+        <!-- Drop zone overlay -->
+        <div class="cmp-drop-overlay" id="cmpDropOverlay">
+          <div class="cmp-drop-zone" id="cmpDropZone1">
+            <div class="cmp-drop-icon">📂</div>
+            <div class="cmp-drop-title">ファイル1をドロップ</div>
+            <div class="cmp-drop-sub">.pro / .st / .exp ファイルに対応</div>
+          </div>
+          <div class="cmp-drop-zone" id="cmpDropZone2">
+            <div class="cmp-drop-icon">📂</div>
+            <div class="cmp-drop-title">ファイル2をドロップ</div>
+            <div class="cmp-drop-sub">.pro / .st / .exp ファイルに対応</div>
+          </div>
+        </div>
+        <!-- 宣言部 row -->
+        <div class="cmp-section-row" id="cmpDeclRow">
+          <canvas class="cmp-diff-map" id="cmpDiffMapDecl"></canvas>
+          <div class="cmp-pane" id="cmpDeclPane1">
+            <div class="cmp-pane-label">宣言部</div>
+            <div class="cmp-pane-body">
+              <div class="cmp-line-numbers" id="cmpDeclLn1"></div>
+              <div class="cmp-code-scroll" id="cmpDeclScroll1">
+                <div class="cmp-highlight" id="cmpDeclHl1"></div>
+              </div>
+            </div>
+          </div>
+          <div class="cmp-pane" id="cmpDeclPane2">
+            <div class="cmp-pane-label">宣言部</div>
+            <div class="cmp-pane-body">
+              <div class="cmp-line-numbers" id="cmpDeclLn2"></div>
+              <div class="cmp-code-scroll" id="cmpDeclScroll2">
+                <div class="cmp-highlight" id="cmpDeclHl2"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- リサイザー -->
+        <div class="cmp-resizer" id="cmpResizer"></div>
+        <!-- 実装部 row -->
+        <div class="cmp-section-row" id="cmpImplRow">
+          <canvas class="cmp-diff-map" id="cmpDiffMapImpl"></canvas>
+          <div class="cmp-pane" id="cmpImplPane1">
+            <div class="cmp-pane-label">実装部</div>
+            <div class="cmp-pane-body">
+              <div class="cmp-line-numbers" id="cmpImplLn1"></div>
+              <div class="cmp-code-scroll" id="cmpImplScroll1">
+                <div class="cmp-highlight" id="cmpImplHl1"></div>
+              </div>
+            </div>
+          </div>
+          <div class="cmp-pane" id="cmpImplPane2">
+            <div class="cmp-pane-label">実装部</div>
+            <div class="cmp-pane-body">
+              <div class="cmp-line-numbers" id="cmpImplLn2"></div>
+              <div class="cmp-code-scroll" id="cmpImplScroll2">
+                <div class="cmp-highlight" id="cmpImplHl2"></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -173,7 +395,7 @@ const TYPE_RE=new RegExp('\\b('+TC2_TYPES.join('|')+')\\b','g');
 const TC2F_RE=/\b(LEN|LEFT|RIGHT|MID|CONCAT|INSERT|DELETE|REPLACE|FIND|ABS|SQRT|SIN|COS|TAN|ASIN|ACOS|ATAN|EXP|LOG|LN|MAX|MIN|LIMIT|SEL|MUX|SHL|SHR|ROL|ROR|INT_TO_REAL|REAL_TO_INT|DINT_TO_REAL|REAL_TO_DINT|BOOL_TO_INT|INT_TO_STRING|DINT_TO_STRING|REAL_TO_STRING|WORD_TO_DWORD|MEMSET|MEMCPY|ADR)\b/g;
 const BOOL_RE=/\b(TRUE|FALSE)\b/g;
 const NUM_RE =/\b(\d+\.?\d*(?:[eE][+-]?\d+)?|16#[0-9A-Fa-f]+|2#[01]+|T#[\dSMHD_]+)\b/g;
-const FUNC_RE=/\b([A-Za-z_][A-Za-z0-9_]*)\s*(?=\()/g;
+const FUNC_RE=/\b([A-Za-z_][A-Za-z0-9_]*)\s*\(/g;
 
 // ============================================================
 // State
@@ -182,8 +404,199 @@ let activeTabId=null;
 let searchMatches=[];
 let searchCurIdx=-1;
 let optCase=false,optWord=false;
-let cursorLineIdx=0;   // line index where user last clicked in editor
+let cursorLineIdx=0;   // line index where user last clicked in editor (full code)
 let dblWord='';        // word highlighted by last dblclick
+let currentSplit={decl:'',impl:'',splitLine:0}; // current pane split state
+
+// ============================================================
+// Comparison mode state
+// ============================================================
+let comparisonMode=false;
+let file1Data=null;  // {tree, pous, filename}
+let file2Data=null;  // {tree, pous, filename}
+let cmpSelectedPou=null; // currently selected POU in comparison tree
+let cmpTreeResult=null;  // result of comparePouTrees()
+let cmpDisplayData={};   // {paneId: displayLines[]} for search
+let cmpSearchMatches=[]; // [{pouName,section,localLineIdx,start,end}] navigation matches (active side, all POUs)
+let cmpSearchCurIdx=-1;  // current search match index in comparison mode
+let cmpActiveSide='left';    // 'left'|'right' active search side
+let cmpHighlightData={};     // {paneId: [{displayIdx,start,end}]} highlight data for current POU
+
+// ============================================================
+// Performance caches
+// ============================================================
+const _cmtMapCache=new Map(); // tabId → comment map array (invalidated on file load)
+const _diffCache=new Map();   // "lines1\x00lines2" → {display1, display2} (invalidated on cmp file load)
+
+// ============================================================
+// Diff engine (LCS-based)
+// ============================================================
+
+/**
+ * Compute line-level diff using LCS (Longest Common Subsequence).
+ * @param {string[]} lines1 - lines from file 1
+ * @param {string[]} lines2 - lines from file 2
+ * @returns {Array<{type:'match'|'del'|'add', line1?:number, line2?:number}>}
+ */
+function diffLines(lines1, lines2){
+  const n=lines1.length, m=lines2.length;
+  // Build LCS table
+  const dp=Array(n+1).fill(null).map(()=>Array(m+1).fill(0));
+  for(let i=1;i<=n;i++){
+    for(let j=1;j<=m;j++){
+      if(lines1[i-1]===lines2[j-1]) dp[i][j]=dp[i-1][j-1]+1;
+      else dp[i][j]=Math.max(dp[i-1][j],dp[i][j-1]);
+    }
+  }
+  // Backtrack to produce diff ops
+  const ops=[];
+  let i=n, j=m;
+  while(i>0||j>0){
+    if(i>0 && j>0 && lines1[i-1]===lines2[j-1]){
+      ops.unshift({type:'match',line1:i-1,line2:j-1});
+      i--;j--;
+    }else if(j>0 && (i===0||dp[i][j-1]>=dp[i-1][j])){
+      ops.unshift({type:'add',line2:j-1});
+      j--;
+    }else{
+      ops.unshift({type:'del',line1:i-1});
+      i--;
+    }
+  }
+  return ops;
+}
+
+/**
+ * Cache-aware wrapper: compute diffLines + buildAlignedDisplay, caching by content key.
+ * @param {string[]} lines1
+ * @param {string[]} lines2
+ * @returns {{display1: Array, display2: Array}}
+ */
+function getDiffAligned(lines1, lines2){
+  const key=lines1.join('\n')+'\x00'+lines2.join('\n');
+  if(_diffCache.has(key)) return _diffCache.get(key);
+  const ops=diffLines(lines1,lines2);
+  const result=buildAlignedDisplay(ops,lines1,lines2);
+  _diffCache.set(key,result);
+  return result;
+}
+
+/**
+ * Build aligned display arrays with placeholders for synchronized scrolling.
+ * Consecutive del+add pairs are treated as modifications.
+ * @param {Array} ops - diff operations from diffLines()
+ * @param {string[]} lines1
+ * @param {string[]} lines2
+ * @returns {{display1: Array, display2: Array}}
+ *   Each entry: {type:'match'|'mod'|'del'|'add'|'placeholder', content:string, lineNum?:number}
+ */
+function buildAlignedDisplay(ops, lines1, lines2){
+  const display1=[], display2=[];
+  let i=0;
+  while(i<ops.length){
+    if(ops[i].type==='match'){
+      display1.push({type:'match',content:lines1[ops[i].line1],lineNum:ops[i].line1+1});
+      display2.push({type:'match',content:lines2[ops[i].line2],lineNum:ops[i].line2+1});
+      i++;
+    }else{
+      // Collect consecutive dels then adds
+      const dels=[],adds=[];
+      while(i<ops.length&&ops[i].type==='del'){dels.push(ops[i]);i++;}
+      while(i<ops.length&&ops[i].type==='add'){adds.push(ops[i]);i++;}
+      // Pair up as modifications where possible
+      const paired=Math.min(dels.length,adds.length);
+      for(let p=0;p<paired;p++){
+        display1.push({type:'mod',content:lines1[dels[p].line1],lineNum:dels[p].line1+1});
+        display2.push({type:'mod',content:lines2[adds[p].line2],lineNum:adds[p].line2+1});
+      }
+      // Remaining dels → placeholder on right
+      for(let p=paired;p<dels.length;p++){
+        display1.push({type:'del',content:lines1[dels[p].line1],lineNum:dels[p].line1+1});
+        display2.push({type:'placeholder',content:''});
+      }
+      // Remaining adds → placeholder on left
+      for(let p=paired;p<adds.length;p++){
+        display1.push({type:'placeholder',content:''});
+        display2.push({type:'add',content:lines2[adds[p].line2],lineNum:adds[p].line2+1});
+      }
+    }
+  }
+  return {display1,display2};
+}
+
+/**
+ * Compare POU trees from two files.
+ * @param {{tree:Object, pous:Object}} data1
+ * @param {{tree:Object, pous:Object}} data2
+ * @returns {Array<{name:string, status:'unchanged'|'modified'|'added'|'deleted', folder:string}>}
+ */
+function comparePouTrees(data1, data2){
+  const names1=new Set(Object.keys(data1.pous));
+  const names2=new Set(Object.keys(data2.pous));
+  const allNames=new Set([...names1,...names2]);
+
+  // Determine resource keys (same logic as buildTree)
+  const resKeys=new Set();
+  const tree=data1.tree||data2.tree;
+  if(tree&&tree.Resources){
+    for(const items of Object.values(tree.Resources))
+      for(const n of items) resKeys.add(n);
+  }
+  // Fallback: detect resource-like keys
+  for(const k of allNames){
+    if(k==='Global_Variables'||k==='TwinCAT_Configuration'||k==='Variable_Configuration'||k==='TwinCAT_Import')
+      resKeys.add(k);
+  }
+
+  const results=[];
+  for(const name of allNames){
+    const in1=names1.has(name), in2=names2.has(name);
+    let status;
+    let diffCount=0;
+    if(in1&&in2){
+      if(data1.pous[name]===data2.pous[name]){
+        status='unchanged';
+      }else{
+        status='modified';
+        // Count diff lines (mod/del/add) for display — reuse getDiffAligned() cache
+        const sp1=splitPouContent(data1.pous[name]);
+        const sp2=splitPouContent(data2.pous[name]);
+        const declAl=getDiffAligned(sp1.decl?sp1.decl.split('\n'):[],sp2.decl?sp2.decl.split('\n'):[]);
+        const implAl=getDiffAligned(sp1.impl?sp1.impl.split('\n'):[],sp2.impl?sp2.impl.split('\n'):[]);
+        for(const d of declAl.display1){if(d.type==='mod') diffCount+=2; else if(d.type==='del') diffCount++;}
+        for(const d of declAl.display2) if(d.type==='add') diffCount++;
+        for(const d of implAl.display1){if(d.type==='mod') diffCount+=2; else if(d.type==='del') diffCount++;}
+        for(const d of implAl.display2) if(d.type==='add') diffCount++;
+      }
+    }else if(in1){
+      status='deleted';
+    }else{
+      status='added';
+    }
+    // Determine section (POUs or Resources)
+    const section=resKeys.has(name)?'Resources':'POUs';
+    // Determine folder from tree structure
+    let folder='';
+    if(section==='POUs'&&tree&&tree.POUs){
+      for(const [f,items] of Object.entries(tree.POUs)){
+        if(items.includes(name)){folder=f==='__root__'?'':f;break;}
+      }
+    }else if(section==='Resources'&&tree&&tree.Resources){
+      for(const [f,items] of Object.entries(tree.Resources)){
+        if(items.includes(name)){folder=f;break;}
+      }
+    }
+    results.push({name,status,folder,diffCount,section});
+  }
+  // Sort: modified first, then added, deleted, unchanged
+  const order={modified:0,added:1,deleted:2,unchanged:3};
+  results.sort((a,b)=>{
+    const oa=order[a.status]!==undefined?order[a.status]:3;
+    const ob=order[b.status]!==undefined?order[b.status]:3;
+    return oa-ob||a.name.localeCompare(b.name);
+  });
+  return results;
+}
 
 // ============================================================
 // Syntax highlight
@@ -200,7 +613,80 @@ function hlSeg(s){
     .replace(FUNC_RE,(_,fn)=>`<span class="func">${fn}</span>(`);
 }
 
-function hlLine(line){
+// Build multi-line comment map: for each line, returns 'full' | 'start' | 'mid' | 'end' | null
+function buildCommentMap(code){
+  const lines=code.split('\n');
+  const map=new Array(lines.length).fill(null);
+  let inComment=false, startLine=-1;
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i];
+    if(inComment){
+      const endIdx=line.indexOf('*)');
+      if(endIdx>=0){
+        inComment=false;
+        if(startLine===i) map[i]='full';
+        else map[i]='end';
+      }else{
+        map[i]='mid';
+      }
+    }
+    if(!inComment){
+      // Check for (* that doesn't close on same line (scan for unmatched opens)
+      let searchPos=0;
+      while(searchPos<line.length){
+        const openIdx=line.indexOf('(*',searchPos);
+        if(openIdx<0) break;
+        const closeIdx=line.indexOf('*)',openIdx+2);
+        if(closeIdx>=0){
+          searchPos=closeIdx+2; // matched on same line, keep scanning
+        }else{
+          // Unmatched open — multi-line comment starts here
+          inComment=true;
+          startLine=i;
+          map[i]='start';
+          break;
+        }
+      }
+    }
+  }
+  return map;
+}
+
+function hlLine(line, commentState){
+  // If entire line is inside a multi-line comment
+  if(commentState==='mid') return `<span class="comment">${esc(line)}</span>`;
+
+  // 'end': line ends a multi-line comment at *)
+  if(commentState==='end'){
+    const endIdx=line.indexOf('*)');
+    const cmPart=line.slice(0,endIdx+2);
+    const rest=line.slice(endIdx+2);
+    return `<span class="comment">${esc(cmPart)}</span>`+(rest?hlLine(rest,null):'');
+  }
+
+  // 'start': line starts a multi-line comment from (* to end of line
+  if(commentState==='start'){
+    // Find the unmatched (* (skip matched pairs)
+    let searchPos=0, unmatchedIdx=-1;
+    while(searchPos<line.length){
+      const openIdx=line.indexOf('(*',searchPos);
+      if(openIdx<0) break;
+      const closeIdx=line.indexOf('*)',openIdx+2);
+      if(closeIdx>=0){
+        searchPos=closeIdx+2;
+      }else{
+        unmatchedIdx=openIdx;
+        break;
+      }
+    }
+    if(unmatchedIdx>=0){
+      const before=line.slice(0,unmatchedIdx);
+      const cmPart=line.slice(unmatchedIdx);
+      return (before?hlLine(before,null):'')+`<span class="comment">${esc(cmPart)}</span>`;
+    }
+  }
+
+  // Normal line (or 'full' — handled by existing inline regex)
   const pr=[];
   const cmRe=/\(\*[\s\S]*?\*\)|\/\/.*/g;
   const stRe=/'[^']*'/g;
@@ -226,16 +712,51 @@ function hlLine(line){
 // ============================================================
 // Render
 // ============================================================
-function renderHighlight(tabId){
-  const code=PROJECT_DATA.pous[tabId]||'';
+// Split POU content into declaration (VAR...END_VAR) and implementation
+function splitPouContent(code){
   const lines=code.split('\n');
+  // Find the last END_VAR line
+  let lastEndVar=-1;
+  for(let i=lines.length-1;i>=0;i--){
+    if(/\bEND_VAR\b/.test(lines[i])){lastEndVar=i;break;}
+  }
+  let splitAt;
+  if(lastEndVar>=0){
+    splitAt=lastEndVar+1;
+  }else{
+    // No END_VAR: split after PROGRAM/FUNCTION_BLOCK/FUNCTION header line
+    const headerIdx=lines.findIndex(l=>/^\s*(PROGRAM|FUNCTION_BLOCK|FUNCTION)\b/.test(l));
+    if(headerIdx>=0){
+      splitAt=headerIdx+1;
+    }else{
+      // No header either (Resource files etc.) — all declaration
+      return{decl:code,impl:'',splitLine:lines.length};
+    }
+  }
+  // Skip blank lines between declaration and implementation
+  let implStart=splitAt;
+  while(implStart<lines.length&&lines[implStart].trim()==='') implStart++;
+  const decl=lines.slice(0,splitAt).join('\n');
+  if(implStart>=lines.length) return{decl,impl:'',splitLine:lines.length};
+  const impl=lines.slice(implStart).join('\n');
+  return{decl,impl,splitLine:implStart};
+}
 
-  // Search match map
+// Generic pane highlight renderer
+function renderHighlightPane(code,hlId,lineOffset,tabId){
+  const lines=code.split('\n');
+  const fullCode=PROJECT_DATA.pous[tabId]||'';
+  if(!_cmtMapCache.has(tabId)) _cmtMapCache.set(tabId,buildCommentMap(fullCode));
+  const cmtMap=_cmtMapCache.get(tabId);
+
+  // Search match map (filter to this pane's line range)
   const lineMap=new Map();
   searchMatches.forEach((m,idx)=>{
     if(m.tabId!==tabId) return;
-    if(!lineMap.has(m.lineIdx)) lineMap.set(m.lineIdx,[]);
-    lineMap.get(m.lineIdx).push({start:m.start,end:m.end,isCur:idx===searchCurIdx});
+    const localLine=m.lineIdx-lineOffset;
+    if(localLine<0||localLine>=lines.length) return;
+    if(!lineMap.has(localLine)) lineMap.set(localLine,[]);
+    lineMap.get(localLine).push({start:m.start,end:m.end,isCur:idx===searchCurIdx});
   });
 
   // dblclick word highlight map
@@ -252,11 +773,11 @@ function renderHighlight(tabId){
   }
 
   const html=lines.map((line,i)=>{
+    const globalLine=i+lineOffset;
     const marks=lineMap.get(i)||[];
     const wmarks=wordMap.get(i)||[];
-    if(!marks.length&&!wmarks.length) return hlLine(line);
+    if(!marks.length&&!wmarks.length) return hlLine(line,cmtMap[globalLine]);
 
-    // Merge: search > word
     const all=[
       ...marks.map(m=>({...m,type:m.isCur?'cur':'search'})),
       ...wmarks.map(m=>({...m,type:'word'}))
@@ -271,40 +792,70 @@ function renderHighlight(tabId){
     }
     if(pos<line.length) parts.push({text:line.slice(pos),type:'plain'});
     return parts.map(p=>{
-      if(p.type==='plain')  return hlLine(p.text);
+      if(p.type==='plain')  return hlLine(p.text,cmtMap[globalLine]);
       if(p.type==='cur')    return `<span class="search-cur-hl">${esc(p.text)}</span>`;
       if(p.type==='search') return `<span class="search-hl">${esc(p.text)}</span>`;
       if(p.type==='word')   return `<span class="word-sel">${esc(p.text)}</span>`;
     }).join('');
   }).join('\n');
 
-  document.getElementById('highlightLayer').innerHTML=html+'\n';
+  document.getElementById(hlId).innerHTML=html+'\n';
 }
 
-function renderLineNumbers(tabId){
-  const code=PROJECT_DATA.pous[tabId]||'';
+// Generic pane line number renderer
+function renderLineNumbersPane(code,elId,lineOffset,tabId){
   const lines=code.split('\n');
   const searchLines=new Set(searchMatches.filter(m=>m.tabId===tabId).map(m=>m.lineIdx));
   let h='';
   for(let i=0;i<lines.length;i++){
+    const globalLine=i+lineOffset;
     let cls='line-num';
-    if(searchLines.has(i)) cls+=' active-search';
-    else if(i===cursorLineIdx) cls+=' cursor-line';
+    if(searchLines.has(globalLine)) cls+=' active-search';
+    else if(globalLine===cursorLineIdx) cls+=' cursor-line';
     h+=`<div class="${cls}">${i+1}</div>`;
   }
-  document.getElementById('lineNumbers').innerHTML=h;
+  document.getElementById(elId).innerHTML=h;
 }
 
 function renderCode(tabId){
   if(!PROJECT_DATA||!tabId){return;}
   const code=PROJECT_DATA.pous[tabId]||'';
-  renderHighlight(tabId);
-  renderLineNumbers(tabId);
-  const ta=document.getElementById('codeTextarea');
-  if(ta.value!==code) ta.value=code;
-  const lines=code.split('\n');
+  const split=splitPouContent(code);
+  currentSplit=split;
+
+  const paneDecl=document.getElementById('paneDecl');
+  const paneImpl=document.getElementById('paneImpl');
+  const resizer=document.getElementById('paneResizer');
+
+  if(split.impl.trim()){
+    // Both panes visible
+    paneDecl.classList.remove('full');
+    paneImpl.style.display='';
+    resizer.style.display='';
+  }else{
+    // Declaration only (Resource files, etc.)
+    paneDecl.classList.add('full');
+    paneImpl.style.display='none';
+    resizer.style.display='none';
+  }
+
+  // Render declaration pane
+  renderHighlightPane(split.decl,'declHighlight',0,tabId);
+  renderLineNumbersPane(split.decl,'declLineNumbers',0,tabId);
+  const declTa=document.getElementById('declTextarea');
+  if(declTa.value!==split.decl) declTa.value=split.decl;
+
+  // Render implementation pane
+  if(split.impl.trim()){
+    const implOffset=split.splitLine;
+    renderHighlightPane(split.impl,'implHighlight',implOffset,tabId);
+    renderLineNumbersPane(split.impl,'implLineNumbers',implOffset,tabId);
+    const implTa=document.getElementById('implTextarea');
+    if(implTa.value!==split.impl) implTa.value=split.impl;
+  }
+
   document.getElementById('statusFile').textContent=tabId;
-  document.getElementById('statusLines').textContent=lines.length+' 行';
+  document.getElementById('statusLines').textContent=code.split('\n').length+' 行';
 }
 
 // ============================================================
@@ -335,8 +886,8 @@ function buildSidebar(){
 
 function sbFile(name){
   const hits=searchMatches.filter(m=>m.tabId===name).length;
-  return `<div class="tree-file${activeTabId===name?' active':''}" onclick="openTab('${name}')">
-    <span class="prg-badge">PRG</span>${name}
+  return `<div class="tree-file${activeTabId===name?' active':''}" onclick='openTab(${JSON.stringify(name)})'>
+    <span class="prg-badge">PRG</span>${esc(name)}
     ${hits>0?`<span class="hit-badge">${hits}</span>`:''}
   </div>`;
 }
@@ -359,7 +910,7 @@ function buildTabs(){
   let h='';
   for(const name of getAllFiles()){
     const hits=searchMatches.filter(m=>m.tabId===name).length;
-    h+=`<div class="tab${activeTabId===name?' active':''}" onclick="openTab('${name}')">${name}${hits>0?`<span class="hit-count">${hits}</span>`:''}</div>`;
+    h+=`<div class="tab${activeTabId===name?' active':''}" onclick='openTab(${JSON.stringify(name)})'>${esc(name)}${hits>0?`<span class="hit-count">${hits}</span>`:''}</div>`;
   }
   document.getElementById('tabBar').innerHTML=h;
 }
@@ -368,53 +919,195 @@ function openTab(name){
   activeTabId=name;
   cursorLineIdx=0;
   dblWord='';
-  buildTabs();buildSidebar();
-  renderCode(name);
-  document.getElementById('editorScroll').scrollTop=0;
-  document.getElementById('statusSel').textContent='';
-  // If search active, jump to first match in this tab
+  // Update searchCurIdx BEFORE render so highlight shows correct current match
   if(searchMatches.length>0){
     const idx=searchMatches.findIndex(m=>m.tabId===name);
-    if(idx>=0){ searchCurIdx=idx; updateCount(); scrollToMatch(); }
+    if(idx>=0){
+      searchCurIdx=idx;
+      cursorLineIdx=searchMatches[idx].lineIdx;
+    }
+  }
+  buildTabs();buildSidebar();
+  renderCode(name);
+  document.getElementById('statusSel').textContent='';
+  if(searchMatches.length>0&&searchCurIdx>=0){
+    updateCount();
+    requestAnimationFrame(()=>scrollToMatch());
+  }else{
+    document.getElementById('declScroll').scrollTop=0;
+    const implS=document.getElementById('implScroll');
+    if(implS) implS.scrollTop=0;
   }
 }
 
 // ============================================================
 // File open — CP932 decoding fix
 // ============================================================
-function loadProFile(event){
-  const file=event.target.files[0];
-  if(!file) return;
+
+// Shared helper: read a .pro/.st/.exp file blob, parse it, call onSuccess(parsed, filename)
+function readProFileBlob(file, onSuccess){
   const reader=new FileReader();
   reader.onload=e=>{
     try{
       const parsed=parseProFile(e.target.result,file.name);
-      PROJECT_DATA=parsed;
-      searchMatches=[];searchCurIdx=-1;dblWord='';
-      document.getElementById('searchInput').value='';
-      document.getElementById('searchCount').textContent='';
-      const first=getAllFiles()[0];
-      activeTabId=first;cursorLineIdx=0;
-      buildTabs();buildSidebar();renderCode(first);
-      hideEmptyState();
-      showToast('📂 '+file.name+' を読み込みました');
+      onSuccess(parsed,file.name);
     }catch(err){showToast('⚠️ 読み込みエラー: '+err.message);}
   };
-  // Read as ArrayBuffer for proper CP932 decoding
   reader.readAsArrayBuffer(file);
+}
+
+function loadProFile(event){
+  const file=event.target.files[0];
+  if(file) loadFileFromBlob(file);
   event.target.value='';
 }
 
+function loadFileFromBlob(file){
+  readProFileBlob(file,(parsed,name)=>{
+    PROJECT_DATA=parsed;
+    _cmtMapCache.clear();
+    searchMatches=[];searchCurIdx=-1;dblWord='';
+    document.getElementById('searchInput').value='';
+    document.getElementById('searchCount').textContent='';
+    const first=getAllFiles()[0];
+    activeTabId=first;cursorLineIdx=0;
+    buildTabs();buildSidebar();renderCode(first);
+    hideEmptyState();
+    showToast('📂 '+name+' を読み込みました');
+  });
+}
+
+// Drag & Drop support
+document.addEventListener('DOMContentLoaded',()=>{
+  // Viewer mode D&D
+  const dropZone=document.getElementById('declScroll');
+  const emptyEl=document.getElementById('emptyState');
+  dropZone.addEventListener('dragover',e=>{
+    e.preventDefault();e.stopPropagation();
+    e.dataTransfer.dropEffect='copy';
+    if(emptyEl) emptyEl.classList.add('drag-over');
+  });
+  dropZone.addEventListener('dragleave',e=>{
+    e.preventDefault();e.stopPropagation();
+    if(emptyEl) emptyEl.classList.remove('drag-over');
+  });
+  dropZone.addEventListener('drop',e=>{
+    e.preventDefault();e.stopPropagation();
+    if(emptyEl) emptyEl.classList.remove('drag-over');
+    const file=e.dataTransfer.files[0];
+    if(file&&/\.(pro|st|exp)$/i.test(file.name)){
+      loadFileFromBlob(file);
+    }else if(file){
+      showToast('⚠️ .pro / .st / .exp ファイルのみ対応しています');
+    }
+  });
+
+  // Comparison mode click tracking
+  document.getElementById('cmpCodeArea').addEventListener('click',onCmpCodeClick);
+
+  // Comparison mode drag & drop with visual feedback
+  const cmpContainer=document.getElementById('cmpContainer');
+  const cmpDropOverlay=document.getElementById('cmpDropOverlay');
+  const cmpDropZone1=document.getElementById('cmpDropZone1');
+  const cmpDropZone2=document.getElementById('cmpDropZone2');
+  let cmpDragCounter=0;
+
+  function updateCmpDropOverlay(){
+    if(file1Data&&file2Data) cmpDropOverlay.classList.add('hidden');
+    else cmpDropOverlay.classList.remove('hidden');
+  }
+  updateCmpDropOverlay();
+
+  cmpContainer.addEventListener('dragenter',e=>{
+    e.preventDefault();e.stopPropagation();
+    cmpDragCounter++;
+    // Show overlay even if both files loaded (allow re-drop)
+    cmpDropOverlay.classList.remove('hidden');
+  });
+  cmpContainer.addEventListener('dragleave',e=>{
+    e.preventDefault();e.stopPropagation();
+    cmpDragCounter--;
+    if(cmpDragCounter<=0){
+      cmpDragCounter=0;
+      cmpDropZone1.classList.remove('drag-over');
+      cmpDropZone2.classList.remove('drag-over');
+      updateCmpDropOverlay();
+    }
+  });
+  cmpContainer.addEventListener('dragover',e=>{
+    e.preventDefault();e.stopPropagation();
+    e.dataTransfer.dropEffect='copy';
+    // Highlight the zone the cursor is over
+    const rect1=cmpDropZone1.getBoundingClientRect();
+    const rect2=cmpDropZone2.getBoundingClientRect();
+    const over1=e.clientX>=rect1.left&&e.clientX<=rect1.right&&e.clientY>=rect1.top&&e.clientY<=rect1.bottom;
+    const over2=e.clientX>=rect2.left&&e.clientX<=rect2.right&&e.clientY>=rect2.top&&e.clientY<=rect2.bottom;
+    cmpDropZone1.classList.toggle('drag-over',over1);
+    cmpDropZone2.classList.toggle('drag-over',over2);
+  });
+  cmpContainer.addEventListener('drop',e=>{
+    e.preventDefault();e.stopPropagation();
+    cmpDragCounter=0;
+    cmpDropZone1.classList.remove('drag-over');
+    cmpDropZone2.classList.remove('drag-over');
+    const file=e.dataTransfer.files[0];
+    if(!file||!/\.(pro|st|exp)$/i.test(file.name)){
+      if(file) showToast('⚠️ .pro / .st / .exp ファイルのみ対応しています');
+      updateCmpDropOverlay();
+      return;
+    }
+    // Determine which file slot by drop zone position
+    const rect1=cmpDropZone1.getBoundingClientRect();
+    const which=(e.clientX<=rect1.right)?1:2;
+    readProFileBlob(file,(parsed,name)=>{
+      if(which===1){
+        file1Data={tree:parsed.tree,pous:parsed.pous,filename:name};
+        document.getElementById('cmpFile1Name').textContent=name;
+      }else{
+        file2Data={tree:parsed.tree,pous:parsed.pous,filename:name};
+        document.getElementById('cmpFile2Name').textContent=name;
+      }
+      _diffCache.clear();
+      showToast('📂 '+name+' をファイル'+which+'に読み込みました');
+      updateCmpDropOverlay();
+      if(file1Data&&file2Data) runComparison();
+    });
+  });
+});
+
 function parseProFile(arrayBuffer, filename){
+  // Pre-process: fix END_VAR → code body boundary in binary
+  // Binary format: END_VAR [optional CRLF] 0x12 [4-byte LE length] [code body]
+  // Replace the 0x12 marker + 4-byte length field with CRLF so decoder produces clean text
+  const textBytes=new Uint8Array(arrayBuffer).slice();
+  const EV=[0x45,0x4E,0x44,0x5F,0x56,0x41,0x52]; // "END_VAR"
+  for(let i=0;i<textBytes.length-12;i++){
+    let ok=true;
+    for(let j=0;j<7;j++){if(textBytes[i+j]!==EV[j]){ok=false;break;}}
+    if(!ok) continue;
+    let p=i+7;
+    if(p+1<textBytes.length&&textBytes[p]===0x0D&&textBytes[p+1]===0x0A) p+=2;
+    if(p+4<textBytes.length&&textBytes[p]===0x12){
+      // Replace 0x12 + 4-byte length with CRLF + 3 newlines (clean separator)
+      textBytes[p]=0x0D;textBytes[p+1]=0x0A;
+      textBytes[p+2]=0x0A;textBytes[p+3]=0x0A;textBytes[p+4]=0x0A;
+    }
+  }
+  // Fix lone LF inside comments: 0x0A 0x20 0x2A 0x29 ("\n *)") → 0x20 0x2A 0x29 0x0D (" *)\r")
+  // TwinCAT 2 binary sometimes inserts a bare LF before " *)" causing comments to split across lines
+  for(let i=0;i<textBytes.length-3;i++){
+    if(textBytes[i]===0x0A&&textBytes[i+1]===0x20&&textBytes[i+2]===0x2A&&textBytes[i+3]===0x29){
+      textBytes[i]=0x20;textBytes[i+1]=0x2A;textBytes[i+2]=0x29;textBytes[i+3]=0x20;
+    }
+  }
   // Decode with CP932 (Shift-JIS) using TextDecoder with fallback
   let text;
   try{
-    // Try CP932/Shift-JIS first
     const decoder=new TextDecoder('shift-jis');
-    text=decoder.decode(new Uint8Array(arrayBuffer));
+    text=decoder.decode(textBytes);
   }catch(e){
     const decoder=new TextDecoder('utf-8',{fatal:false});
-    text=decoder.decode(new Uint8Array(arrayBuffer));
+    text=decoder.decode(textBytes);
   }
 
   // Find all PROGRAM / FUNCTION_BLOCK / FUNCTION blocks
@@ -434,17 +1127,11 @@ function parseProFile(arrayBuffer, filename){
     pous[p.name]=cleanBlock(text.slice(p.pos,end));
   });
 
-  // Global_Variables CONSTANT
-  const gvIdx=text.indexOf('VAR_GLOBAL CONSTANT');
-  if(gvIdx>=0){
-    const cmtIdx=text.lastIndexOf('(*',gvIdx);
-    const start=(cmtIdx>=0&&gvIdx-cmtIdx<120)?cmtIdx:gvIdx;
-    const chunk=text.slice(start,start+5000);
-    const ev=chunk.indexOf('END_VAR');
-    if(ev>=0) pous['Global_Variables']=chunk.slice(0,ev+7).trim();
-  }
+  // Parse binary tree to get Global Variables children names
+  const treeInfo=parseProjectTree(arrayBuffer);
+  extractResourceContent(text,pous,treeInfo);
 
-  const tree=buildTree(pous,text);
+  const tree=buildTree(pous,treeInfo);
   return{tree,pous};
 }
 
@@ -455,7 +1142,7 @@ function cleanBlock(chunk){
   let inImpl=false; // 実装部（IF/FOR等）に入ったか
 
   // バイナリ行から抽出できる構造的STパターン
-  const ST_IN_BIN=/\b(?:END_VAR|END_IF|END_FOR|END_CASE|END_WHILE|END_REPEAT|END_PROGRAM|END_FUNCTION(?:_BLOCK)?|IF\s+\w|FOR\s+\w|WHILE\s+\w|CASE\s+\w)\b/;
+  const ST_IN_BIN=/\b(?:END_VAR|END_IF|END_FOR|END_CASE|END_WHILE|END_REPEAT|END_PROGRAM|END_FUNCTION(?:_BLOCK)?)\b|\b(?:IF|FOR|WHILE|CASE)\s+\w/;
 
   for(const line of lines){
     const chars=[...line];
@@ -476,8 +1163,8 @@ function cleanBlock(chunk){
       }
     }else{
       binRun=0;
-      // 行頭の非ASCIIバイナリノイズを除去（ｾ1\t... → \t...）
-      const clean=line.replace(/^[^\x00-\x7F][\x20-\x7E]*(?=\t)/,'');
+      // 行頭の非ASCIIバイナリノイズを除去（ｾ1\t... → \t...）短い接頭辞のみ対象
+      const clean=line.replace(/^[^\x00-\x7F][\x20-\x7E]{0,3}(?=\t)/,'');
       out.push(clean);
       // クリーン行から実装部開始を検出
       if(!inImpl&&(
@@ -486,33 +1173,221 @@ function cleanBlock(chunk){
       )) inImpl=true;
     }
   }
-  return out.join('\n').trim();
+  let result=out.join('\n').replace(/\n{3,}/g,'\n\n').trim();
+  // Trim trailing binary garbage after final END_ keyword
+  // POU code ends with END_PROGRAM/END_FUNCTION_BLOCK/END_FUNCTION or END_IF/END_FOR/END_CASE
+  const endRe=/\b(END_(?:PROGRAM|FUNCTION_BLOCK|FUNCTION|IF|FOR|CASE|WHILE|REPEAT))\b(?![\s\S]*\b(?:END_(?:PROGRAM|FUNCTION_BLOCK|FUNCTION|IF|FOR|CASE|WHILE|REPEAT))\b)/;
+  const em=endRe.exec(result);
+  if(em){
+    const cutPos=em.index+em[1].length;
+    const tail=result.slice(cutPos);
+    // If there's non-whitespace garbage after the last END_ keyword, trim it
+    if(tail.trim().length>0&&!/^\s*$/.test(tail)&&!/^\s*\(\*/.test(tail)){
+      result=result.slice(0,cutPos);
+    }
+  }
+  return result;
 }
 
-function buildTree(pous,text){
-  const knownFolders=['Function','ST_ERROR','ST_INPUT','ST_OUTPUT','ST_PROG','ST_ALARM'];
-  const folderMap={'__root__':[]};
-  const fileNames=Object.keys(pous).filter(k=>k!=='Global_Variables');
+// ============================================================
+// Binary tree parsing — extract project tree from .pro binary
+// ============================================================
+function parseProjectTree(arrayBuffer){
+  const bytes=new Uint8Array(arrayBuffer);
+  let treeStart=-1;
+  for(let i=bytes.length-800;i>=0;i--){
+    if(bytes[i]===0x04&&bytes[i+1]===0x00&&bytes[i+2]===0x00&&bytes[i+3]===0x00
+      &&bytes[i+4]===0x50&&bytes[i+5]===0x4F&&bytes[i+6]===0x55&&bytes[i+7]===0x73){
+      treeStart=i;break;
+    }
+  }
+  if(treeStart<0) return null;
 
-  fileNames.forEach(name=>{
-    let placed=false;
-    for(const folder of knownFolders){
-      const fi=text.indexOf(folder);
-      if(fi<0) continue;
-      // Search for the file name within ±300 bytes of folder name
-      const region=text.slice(Math.max(0,fi-50),fi+350);
-      if(region.includes(name)){
-        if(!folderMap[folder]) folderMap[folder]=[];
-        if(!folderMap[folder].includes(name)){folderMap[folder].push(name);placed=true;break;}
+  const dv=new DataView(arrayBuffer);
+  const dec=new TextDecoder('shift-jis');
+
+  function parseNode(pos){
+    const nameLen=dv.getUint32(pos,true);pos+=4;
+    const name=dec.decode(new Uint8Array(arrayBuffer,pos,nameLen));pos+=nameLen;
+    const childCount=dv.getUint16(pos,true);pos+=2;
+    if(childCount>0){
+      pos+=14;
+      const children=[];
+      for(let i=0;i<childCount;i++){
+        const r=parseNode(pos);
+        children.push(r.node);
+        pos=r.pos;
+      }
+      return{node:{name,children},pos};
+    }else{
+      const marker=dv.getInt32(pos+4,true);
+      pos+=(marker===-1)?22:18;
+      return{node:{name,children:[]},pos};
+    }
+  }
+
+  const siblings=[];
+  try{
+    let pos=treeStart;
+    for(let s=0;s<10;s++){
+      try{
+        const r=parseNode(pos);
+        siblings.push(r.node);
+        pos=r.pos;
+      }catch(e){break;}
+    }
+  }catch(e){}
+  return{treeStart,siblings};
+}
+
+// ============================================================
+// Resource content extraction — map binary tree names to text
+// ============================================================
+function extractResourceContent(text,pous,treeInfo){
+  if(!treeInfo){
+    extractResourceFallback(text,pous);
+    return;
+  }
+  const gvNode=treeInfo.siblings.find(n=>n.name==='Global Variables');
+  if(!gvNode||!gvNode.children.length){
+    extractResourceFallback(text,pous);
+    return;
+  }
+
+  const childNames=gvNode.children.map(c=>c.name);
+  // Find each child name's first occurrence in decoded text (content area)
+  const positions=[];
+  for(const name of childNames){
+    const idx=text.indexOf(name);
+    if(idx>=0) positions.push({name,pos:idx});
+  }
+  positions.sort((a,b)=>a.pos-b.pos);
+
+  if(!positions.length){
+    extractResourceFallback(text,pous);
+    return;
+  }
+
+  // For each child, extract VAR_GLOBAL/VAR_CONFIG sections between its position and the next
+  for(let i=0;i<positions.length;i++){
+    const start=positions[i].pos;
+    const end=i+1<positions.length?positions[i+1].pos:start+15000;
+    const region=text.slice(start,end);
+
+    const varRe=/VAR_(?:GLOBAL(?:\s+(?:CONSTANT|PERSISTENT))?|CONFIG)/g;
+    const sections=[];
+    let vm;
+    while((vm=varRe.exec(region))!==null){
+      const chunk=region.slice(vm.index,vm.index+8000);
+      const ev=chunk.indexOf('END_VAR');
+      if(ev<0) continue;
+      const section=chunk.slice(0,ev+7).trim();
+      if(section.length<40||/DO NOT CHANGE/i.test(section)) continue;
+      // Include preceding comment
+      const cmtIdx=region.lastIndexOf('(*',vm.index);
+      const prefix=(cmtIdx>=0&&vm.index-cmtIdx<120)?region.slice(cmtIdx,vm.index):'';
+      sections.push((prefix+section).trim());
+    }
+    if(sections.length){
+      pous[positions[i].name]=sections.join('\n\n').replace(/\r/g,'');
+    }
+  }
+}
+
+// Fallback when binary tree is not available
+function extractResourceFallback(text,pous){
+  // Combine all VAR_GLOBAL sections into Global_Variables
+  const gvRe=/VAR_GLOBAL(?:\s+(?:CONSTANT|PERSISTENT))?/g;
+  const sections=[];
+  let gm;
+  while((gm=gvRe.exec(text))!==null){
+    const chunk=text.slice(gm.index,gm.index+8000);
+    const ev=chunk.indexOf('END_VAR');
+    if(ev<0) continue;
+    const section=chunk.slice(0,ev+7).trim();
+    if(section.length<40||/DO NOT CHANGE/i.test(section)) continue;
+    const cmtIdx=text.lastIndexOf('(*',gm.index);
+    const prefix=(cmtIdx>=0&&gm.index-cmtIdx<120)?text.slice(cmtIdx,gm.index):'';
+    sections.push((prefix+section).trim());
+  }
+  if(sections.length) pous['Global_Variables']=sections.join('\n\n').replace(/\r/g,'');
+
+  // Extract VAR_CONFIG as TwinCAT_Configuration
+  const vcRe=/VAR_CONFIG/g;
+  const vcSections=[];
+  let vm;
+  while((vm=vcRe.exec(text))!==null){
+    const chunk=text.slice(vm.index,vm.index+4000);
+    const ev=chunk.indexOf('END_VAR');
+    if(ev<0) continue;
+    const section=chunk.slice(0,ev+7).trim();
+    if(section.length<40) continue;
+    const cmtIdx=text.lastIndexOf('(*',vm.index);
+    const prefix=(cmtIdx>=0&&vm.index-cmtIdx<120)?text.slice(cmtIdx,vm.index):'';
+    vcSections.push((prefix+section).trim());
+  }
+  if(vcSections.length) pous['TwinCAT_Configuration']=vcSections.join('\n\n').replace(/\r/g,'');
+}
+
+// ============================================================
+// Build tree structure for sidebar display
+// ============================================================
+function buildTree(pous,treeInfo){
+  // Identify resource entries (not POUs)
+  const resKeys=new Set();
+  if(treeInfo){
+    const gvNode=treeInfo.siblings.find(n=>n.name==='Global Variables');
+    if(gvNode) gvNode.children.forEach(c=>{if(pous[c.name]) resKeys.add(c.name);});
+  }
+  // Fallback: detect resource-like keys
+  for(const k of Object.keys(pous)){
+    if(k==='Global_Variables'||k==='TwinCAT_Configuration'||k==='Variable_Configuration'||k==='TwinCAT_Import')
+      resKeys.add(k);
+  }
+
+  const fileNames=Object.keys(pous).filter(k=>!resKeys.has(k));
+  const fileSet=new Set(fileNames);
+
+  const folderMap={'__root__':[]};
+  const resourceMap={};
+
+  if(!treeInfo){
+    // No binary tree — all files at root
+    folderMap['__root__']=fileNames.slice();
+  }else{
+    const pousNode=treeInfo.siblings.find(n=>n.name==='POUs');
+    if(pousNode){
+      for(const child of pousNode.children){
+        if(child.children.length>0){
+          const files=child.children.map(c=>c.name).filter(n=>fileSet.has(n));
+          if(files.length) folderMap[child.name]=files;
+        }else if(fileSet.has(child.name)){
+          folderMap['__root__'].push(child.name);
+        }
       }
     }
-    if(!placed) folderMap['__root__'].push(name);
-  });
+    // Catch any POU files not found in tree
+    fileNames.forEach(n=>{
+      if(!Object.values(folderMap).some(arr=>arr.includes(n)))
+        folderMap['__root__'].push(n);
+    });
+  }
 
-  return{
-    'POUs':folderMap,
-    'Resources':pous['Global_Variables']?{'Global Variables':['Global_Variables']}:{}
-  };
+  // Build Resources section
+  if(treeInfo){
+    const gvNode=treeInfo.siblings.find(n=>n.name==='Global Variables');
+    if(gvNode){
+      const gvChildren=gvNode.children.map(c=>c.name).filter(n=>pous[n]);
+      if(gvChildren.length) resourceMap['Global Variables']=gvChildren;
+    }
+  }
+  // Fallback: if no tree or no children found
+  if(!resourceMap['Global Variables']){
+    const resEntries=[...resKeys].filter(k=>pous[k]);
+    if(resEntries.length) resourceMap['Global Variables']=resEntries;
+  }
+
+  return{'POUs':folderMap,'Resources':resourceMap};
 }
 
 // ============================================================
@@ -534,6 +1409,7 @@ function toggleOpt(id){
 }
 
 function runSearch(){
+  if(comparisonMode){runCmpSearch();return;}
   const q=document.getElementById('searchInput').value;
   searchMatches=[];searchCurIdx=-1;
 
@@ -589,19 +1465,53 @@ function updateCount(){
   const el=document.getElementById('searchCount');
   const q=document.getElementById('searchInput').value;
   if(!q){el.textContent='';return;}
+  if(comparisonMode){
+    if(!cmpSearchMatches.length){el.textContent='0件';el.style.color='var(--kw)';return;}
+    el.textContent=`${cmpSearchCurIdx>=0?cmpSearchCurIdx+1:'-'} / ${cmpSearchMatches.length}件`;
+    el.style.color='var(--accent)';return;
+  }
   if(!searchMatches.length){el.textContent='0件';el.style.color='var(--kw)';return;}
   el.textContent=`${searchCurIdx>=0?searchCurIdx+1:'-'} / ${searchMatches.length}件`;
   el.style.color='var(--accent)';
 }
 
+function needReanchor(){
+  if(searchCurIdx<0) return true;
+  const cur=searchMatches[searchCurIdx];
+  return cur.tabId!==activeTabId||Math.abs(cur.lineIdx-cursorLineIdx)>1;
+}
+
 function nextMatch(){
+  if(comparisonMode){cmpNextMatch();return;}
   if(!searchMatches.length) return;
+  if(needReanchor()){
+    // Find first match at/after cursor in active tab
+    const ni=searchMatches.findIndex(m=>m.tabId===activeTabId&&m.lineIdx>=cursorLineIdx);
+    if(ni>=0){searchCurIdx=ni;jumpTo(searchCurIdx);return;}
+    // No match after cursor in this tab — find first match in next tab (wrap)
+    const ti=searchMatches.findIndex(m=>m.tabId===activeTabId);
+    searchCurIdx=ti>=0?(ti+searchMatches.filter(m=>m.tabId===activeTabId).length)%searchMatches.length:0;
+    jumpTo(searchCurIdx);return;
+  }
   searchCurIdx=(searchCurIdx+1)%searchMatches.length;
   jumpTo(searchCurIdx);
 }
 
 function prevMatch(){
+  if(comparisonMode){cmpPrevMatch();return;}
   if(!searchMatches.length) return;
+  if(needReanchor()){
+    // Find last match at/before cursor in active tab
+    let ni=-1;
+    for(let i=searchMatches.length-1;i>=0;i--){
+      if(searchMatches[i].tabId===activeTabId&&searchMatches[i].lineIdx<=cursorLineIdx){ni=i;break;}
+    }
+    if(ni>=0){searchCurIdx=ni;jumpTo(searchCurIdx);return;}
+    // No match before cursor in this tab — find last match in prev tab (wrap)
+    const ti=searchMatches.findIndex(m=>m.tabId===activeTabId);
+    searchCurIdx=ti>=0?(ti-1+searchMatches.length)%searchMatches.length:searchMatches.length-1;
+    jumpTo(searchCurIdx);return;
+  }
   searchCurIdx=(searchCurIdx-1+searchMatches.length)%searchMatches.length;
   jumpTo(searchCurIdx);
 }
@@ -610,13 +1520,18 @@ function jumpTo(idx){
   updateCount();
   const m=searchMatches[idx];
   if(!m) return;
+  cursorLineIdx=m.lineIdx;
   if(m.tabId!==activeTabId){
     activeTabId=m.tabId;
     buildTabs();buildSidebar();
     renderCode(activeTabId);
   }else{
-    renderHighlight(activeTabId);
-    renderLineNumbers(activeTabId);
+    renderHighlightPane(currentSplit.decl,'declHighlight',0,activeTabId);
+    renderLineNumbersPane(currentSplit.decl,'declLineNumbers',0,activeTabId);
+    if(currentSplit.impl.trim()){
+      renderHighlightPane(currentSplit.impl,'implHighlight',currentSplit.splitLine,activeTabId);
+      renderLineNumbersPane(currentSplit.impl,'implLineNumbers',currentSplit.splitLine,activeTabId);
+    }
   }
   // Ensure scroll happens AFTER render
   requestAnimationFrame(()=>scrollToMatch());
@@ -627,60 +1542,81 @@ function scrollToMatch(){
   const m=searchMatches[searchCurIdx];
   if(!m||m.tabId!==activeTabId) return;
 
-  const scroll=document.getElementById('editorScroll');
-  const hl=document.getElementById('highlightLayer');
-  // Compute line height from actual rendered element
-  const lh=hl.scrollHeight/((PROJECT_DATA&&PROJECT_DATA.pous[activeTabId])||'').split('\n').length;
-  const targetY=m.lineIdx*lh+16;
+  const sp=currentSplit;
+  const inDecl=m.lineIdx<sp.splitLine||!sp.impl.trim();
+  const scrollId=inDecl?'declScroll':'implScroll';
+  const hlId=inDecl?'declHighlight':'implHighlight';
+  const lnId=inDecl?'declLineNumbers':'implLineNumbers';
+  const localLine=inDecl?m.lineIdx:(m.lineIdx-sp.splitLine);
+  const paneCode=inDecl?sp.decl:sp.impl;
+
+  const scroll=document.getElementById(scrollId);
+  const hl=document.getElementById(hlId);
+  if(!scroll||!hl) return;
+  const lineCount=paneCode.split('\n').length;
+  const lh=lineCount>0?hl.scrollHeight/lineCount:20;
+  const targetY=localLine*lh+16;
   const viewH=scroll.clientHeight;
 
-  // Always scroll if not fully visible
   if(targetY<scroll.scrollTop+40||targetY+lh>scroll.scrollTop+viewH-40){
     scroll.scrollTop=Math.max(0,targetY-viewH/3);
   }
-  // Also sync line numbers
-  document.getElementById('lineNumbers').scrollTop=scroll.scrollTop;
+  document.getElementById(lnId).scrollTop=scroll.scrollTop;
 }
 
 // ============================================================
 // Editor interactions
 // ============================================================
 
+// Determine line offset for a given pane
+function paneLineOffset(pane){
+  return pane==='impl'?currentSplit.splitLine:0;
+}
+
 // Click: update cursor position (used as search start)
-function onEditorClick(e){
-  const ta=document.getElementById('codeTextarea');
-  // Calculate line from cursor position
+function onEditorClick(e,pane){
+  const taId=pane==='impl'?'implTextarea':'declTextarea';
+  const ta=document.getElementById(taId);
+  const offset=paneLineOffset(pane);
   setTimeout(()=>{
     const pos=ta.selectionStart;
     const textBefore=ta.value.slice(0,pos);
-    cursorLineIdx=textBefore.split('\n').length-1;
-    renderLineNumbers(activeTabId);
-    document.getElementById('cursorPos').textContent='行 '+(cursorLineIdx+1);
+    const localLine=textBefore.split('\n').length-1;
+    cursorLineIdx=localLine+offset;
+    renderLineNumbersPane(currentSplit.decl,'declLineNumbers',0,activeTabId);
+    if(currentSplit.impl.trim()) renderLineNumbersPane(currentSplit.impl,'implLineNumbers',currentSplit.splitLine,activeTabId);
+    document.getElementById('cursorPos').textContent='行 '+(localLine+1);
   },0);
 }
 
 // Double-click: select word only (no copy)
-// Browser already selects the word on dblclick in textarea — we just capture it
-function onDblClick(e){
-  const ta=document.getElementById('codeTextarea');
+function onDblClick(e,pane){
+  const taId=pane==='impl'?'implTextarea':'declTextarea';
+  const ta=document.getElementById(taId);
+  const offset=paneLineOffset(pane);
   setTimeout(()=>{
     const start=ta.selectionStart,end=ta.selectionEnd;
     if(start===end) return;
     const word=ta.value.slice(start,end);
     if(!word.trim()) return;
     dblWord=word.trim();
-    // Update cursor line
-    cursorLineIdx=ta.value.slice(0,start).split('\n').length-1;
-    renderHighlight(activeTabId);
-    renderLineNumbers(activeTabId);
+    const localLine=ta.value.slice(0,start).split('\n').length-1;
+    cursorLineIdx=localLine+offset;
+    renderHighlightPane(currentSplit.decl,'declHighlight',0,activeTabId);
+    renderLineNumbersPane(currentSplit.decl,'declLineNumbers',0,activeTabId);
+    if(currentSplit.impl.trim()){
+      renderHighlightPane(currentSplit.impl,'implHighlight',currentSplit.splitLine,activeTabId);
+      renderLineNumbersPane(currentSplit.impl,'implLineNumbers',currentSplit.splitLine,activeTabId);
+    }
     document.getElementById('statusSel').textContent='「'+dblWord+'」選択中';
-    document.getElementById('cursorPos').textContent='行 '+(cursorLineIdx+1);
+    document.getElementById('cursorPos').textContent='行 '+(localLine+1);
   },10);
 }
 
 // Mouse up: track manual selection
-function onMouseUp(e){
-  const ta=document.getElementById('codeTextarea');
+function onMouseUp(e,pane){
+  const taId=pane==='impl'?'implTextarea':'declTextarea';
+  const ta=document.getElementById(taId);
   setTimeout(()=>{
     const start=ta.selectionStart,end=ta.selectionEnd;
     if(start!==end){
@@ -695,9 +1631,12 @@ function onMouseUp(e){
 // Ctrl+C copy feedback
 function onTextareaKey(e){
   if((e.ctrlKey||e.metaKey)&&e.key==='c'){
-    const ta=document.getElementById('codeTextarea');
-    const sel=ta.value.slice(ta.selectionStart,ta.selectionEnd);
-    if(sel) setTimeout(()=>showToast('📋 コピーしました ('+sel.length+'文字)'),30);
+    // Check which textarea is focused
+    const ta=document.activeElement;
+    if(ta&&ta.tagName==='TEXTAREA'){
+      const sel=ta.value.slice(ta.selectionStart,ta.selectionEnd);
+      if(sel) setTimeout(()=>showToast('📋 コピーしました ('+sel.length+'文字)'),30);
+    }
   }
 }
 
@@ -707,23 +1646,29 @@ function onTextareaKey(e){
 document.addEventListener('keydown',e=>{
   if(e.key==='F2'){
     e.preventDefault();
-    if(e.shiftKey){prevMatch();return;}
 
-    // Get current selection from textarea
-    const ta=document.getElementById('codeTextarea');
-    const start=ta.selectionStart,end=ta.selectionEnd;
+    // Get current selection from textarea (viewer) or window selection (comparison)
     let wordToSearch='';
-    if(start!==end){
-      wordToSearch=ta.value.slice(start,end).trim();
-    } else if(dblWord){
-      wordToSearch=dblWord;
+    if(comparisonMode){
+      const sel=window.getSelection();
+      if(sel&&sel.toString().trim()) wordToSearch=sel.toString().trim();
+    }else{
+      const ta=document.activeElement;
+      let offset=0;
+      if(ta&&ta.tagName==='TEXTAREA'){
+        offset=ta.id==='implTextarea'?currentSplit.splitLine:0;
+        const start=ta.selectionStart,end=ta.selectionEnd;
+        if(start!==end){
+          wordToSearch=ta.value.slice(start,end).trim();
+          cursorLineIdx=ta.value.slice(0,start).split('\n').length-1+offset;
+        }
+      }
     }
+    if(!wordToSearch&&dblWord) wordToSearch=dblWord;
 
     const inp=document.getElementById('searchInput');
     if(wordToSearch){
       inp.value=wordToSearch;
-      // Update cursor line from selection start
-      cursorLineIdx=ta.value.slice(0,start).split('\n').length-1;
       runSearch();
       showToast('🔍 「'+wordToSearch+'」を検索');
     } else {
@@ -732,18 +1677,20 @@ document.addEventListener('keydown',e=>{
   }
   if(e.key==='F3'){
     e.preventDefault();
-    nextMatch();
+    if(e.shiftKey){prevMatch();}else{nextMatch();}
   }
 });
 
 // ============================================================
 // Scroll sync
 // ============================================================
-function syncScroll(){
-  const s=document.getElementById('editorScroll');
-  document.getElementById('highlightLayer').style.transform=
-    `translate(-${s.scrollLeft}px,-${s.scrollTop}px)`;
-  document.getElementById('lineNumbers').scrollTop=s.scrollTop;
+function syncScrollDecl(){
+  const s=document.getElementById('declScroll');
+  document.getElementById('declLineNumbers').scrollTop=s.scrollTop;
+}
+function syncScrollImpl(){
+  const s=document.getElementById('implScroll');
+  document.getElementById('implLineNumbers').scrollTop=s.scrollTop;
 }
 
 // ============================================================
@@ -752,9 +1699,15 @@ function syncScroll(){
 function showEmptyState(){
   const el=document.getElementById('emptyState');
   if(el) el.style.display='flex';
-  document.getElementById('codeTextarea').value='';
-  document.getElementById('highlightLayer').innerHTML='';
-  document.getElementById('lineNumbers').innerHTML='';
+  document.getElementById('declTextarea').value='';
+  document.getElementById('declHighlight').innerHTML='';
+  document.getElementById('declLineNumbers').innerHTML='';
+  document.getElementById('implTextarea').value='';
+  document.getElementById('implHighlight').innerHTML='';
+  document.getElementById('implLineNumbers').innerHTML='';
+  document.getElementById('paneImpl').style.display='none';
+  document.getElementById('paneResizer').style.display='none';
+  document.getElementById('paneDecl').classList.add('full');
   document.getElementById('statusFile').textContent='';
   document.getElementById('statusLines').textContent='';
   document.getElementById('tabBar').innerHTML='';
@@ -765,6 +1718,74 @@ function hideEmptyState(){
 }
 
 // ============================================================
+// Pane resizer drag handling
+// ============================================================
+(function initResizer(){
+  document.addEventListener('DOMContentLoaded',()=>{
+    const resizer=document.getElementById('paneResizer');
+    const paneDecl=document.getElementById('paneDecl');
+    const container=document.querySelector('.editor-panes');
+    let startY=0,startH=0;
+
+    resizer.addEventListener('mousedown',e=>{
+      e.preventDefault();
+      startY=e.clientY;
+      startH=paneDecl.offsetHeight;
+      resizer.classList.add('dragging');
+      document.addEventListener('mousemove',onMove);
+      document.addEventListener('mouseup',onUp);
+    });
+
+    function onMove(e){
+      const dy=e.clientY-startY;
+      const totalH=container.offsetHeight;
+      const newH=Math.max(60,Math.min(totalH-100,startH+dy));
+      paneDecl.style.height=newH+'px';
+    }
+    function onUp(){
+      resizer.classList.remove('dragging');
+      document.removeEventListener('mousemove',onMove);
+      document.removeEventListener('mouseup',onUp);
+    }
+  });
+})();
+
+// ============================================================
+// Comparison mode resizer drag handling
+// ============================================================
+(function initCmpResizer(){
+  document.addEventListener('DOMContentLoaded',()=>{
+    const resizer=document.getElementById('cmpResizer');
+    const declRow=document.getElementById('cmpDeclRow');
+    const container=document.getElementById('cmpCodeArea');
+    let startY=0,startH=0;
+
+    resizer.addEventListener('mousedown',e=>{
+      e.preventDefault();
+      startY=e.clientY;
+      startH=declRow.offsetHeight;
+      // Disable flex:1 so explicit height takes effect
+      declRow.style.flex='none';
+      resizer.classList.add('dragging');
+      document.addEventListener('mousemove',onMove);
+      document.addEventListener('mouseup',onUp);
+    });
+
+    function onMove(e){
+      const dy=e.clientY-startY;
+      const totalH=container.offsetHeight;
+      const newH=Math.max(60,Math.min(totalH-100,startH+dy));
+      declRow.style.height=newH+'px';
+    }
+    function onUp(){
+      resizer.classList.remove('dragging');
+      document.removeEventListener('mousemove',onMove);
+      document.removeEventListener('mouseup',onUp);
+    }
+  });
+})();
+
+// ============================================================
 // Toast
 // ============================================================
 let toastTimer=null;
@@ -773,6 +1794,807 @@ function showToast(msg){
   el.textContent=msg;el.classList.add('show');
   if(toastTimer) clearTimeout(toastTimer);
   toastTimer=setTimeout(()=>el.classList.remove('show'),1800);
+}
+
+// ============================================================
+// Comparison mode: mode switch, file load, rendering
+// ============================================================
+
+function switchMode(mode){
+  const isCompare=(mode==='compare');
+  comparisonMode=isCompare;
+  document.getElementById('modeView').classList.toggle('active',!isCompare);
+  document.getElementById('modeCompare').classList.toggle('active',isCompare);
+  // Toggle visibility
+  document.getElementById('sidebar').style.display=isCompare?'none':'';
+  document.getElementById('editorArea').style.display=isCompare?'none':'';
+  document.getElementById('cmpContainer').classList.toggle('active',isCompare);
+  document.getElementById('tabBar').style.display=isCompare?'none':'';
+  document.getElementById('btnOpenSingle').style.display=isCompare?'none':'';
+  document.getElementById('cmpDiffNav').style.display=isCompare?'flex':'none';
+  if(isCompare&&typeof updateCmpDropOverlay==='function') updateCmpDropOverlay();
+  // Re-run search to update count/highlights for the active mode
+  if(document.getElementById('searchInput').value) runSearch();
+  else updateCount();
+}
+
+function loadCmpFile(event, which){
+  const file=event.target.files[0];
+  if(!file) return;
+  event.target.value='';
+  readProFileBlob(file,(parsed,name)=>{
+    if(which===1){
+      file1Data={tree:parsed.tree,pous:parsed.pous,filename:name};
+      document.getElementById('cmpFile1Name').textContent=name;
+    }else{
+      file2Data={tree:parsed.tree,pous:parsed.pous,filename:name};
+      document.getElementById('cmpFile2Name').textContent=name;
+    }
+    _diffCache.clear();
+    showToast('📂 '+name+' を読み込みました');
+    if(typeof updateCmpDropOverlay==='function') updateCmpDropOverlay();
+    if(file1Data&&file2Data) runComparison();
+  });
+}
+
+function runComparison(){
+  cmpTreeResult=comparePouTrees(file1Data,file2Data);
+  renderCmpTree();
+  // Auto-select first modified item, or first item
+  const first=cmpTreeResult.find(r=>r.status==='modified')||cmpTreeResult[0];
+  if(first) selectCmpPou(first.name);
+}
+
+function renderCmpTree(){
+  const el=document.getElementById('cmpTree');
+  if(!cmpTreeResult||!cmpTreeResult.length){el.innerHTML='<div class="cmp-empty">比較結果なし</div>';return;}
+  const statusLabel={modified:'変更',added:'追加',deleted:'削除',unchanged:'同一'};
+  const statusIcon={modified:'~',added:'+',deleted:'-',unchanged:'='};
+  // Compute hits per POU from navigation matches (Layer 1)
+  const hitsPerPou={};
+  for(const m of cmpSearchMatches) hitsPerPou[m.pouName]=(hitsPerPou[m.pouName]||0)+1;
+
+  // Group results by section then folder
+  const sections={POUs:{},Resources:{}};
+  for(const r of cmpTreeResult){
+    const sec=r.section||'POUs';
+    const folder=r.folder||'__root__';
+    if(!sections[sec]) sections[sec]={};
+    if(!sections[sec][folder]) sections[sec][folder]=[];
+    sections[sec][folder].push(r);
+  }
+
+  function cmpFileHtml(r,inFolder){
+    const safeName=esc(r.name).replace(/'/g,"\\'");
+    const cls='cmp-tree-item'+(inFolder?' in-folder':'')+(r.name===cmpSelectedPou?' active':'');
+    const hits=hitsPerPou[r.name]||0;
+    const isRes=r.section==='Resources';
+    return `<div class="${cls}" onclick="selectCmpPou('${safeName}')">
+      ${!isRes?'<span class="prg-badge">PRG</span>':''}
+      <span class="cmp-name">${esc(r.name)}</span>
+      ${hits>0?`<span class="cmp-hit-badge">${hits}</span>`:''}
+      <span class="cmp-status cmp-status-${r.status}">${statusIcon[r.status]} ${statusLabel[r.status]}${r.status==='modified'&&r.diffCount>0?' ('+r.diffCount+')':''}</span>
+    </div>`;
+  }
+
+  let h='';
+  for(const [secName,folders] of Object.entries(sections)){
+    const items=Object.values(folders).flat();
+    if(!items.length) continue;
+    h+=`<div class="sidebar-section">
+      <div class="sidebar-header open" onclick="toggleSection(this)">
+        <span class="arrow">▶</span>${secName}
+      </div><div class="tree-body">`;
+    // Root items (no folder)
+    if(folders['__root__']) for(const r of folders['__root__']) h+=cmpFileHtml(r,false);
+    // Folder items
+    for(const [fn,files] of Object.entries(folders)){
+      if(fn==='__root__') continue;
+      h+=`<div class="tree-folder"><span>📁</span>${esc(fn)}</div>`;
+      for(const r of files) h+=cmpFileHtml(r,true);
+    }
+    h+=`</div></div>`;
+  }
+  el.innerHTML=h;
+}
+
+function selectCmpPou(name){
+  cmpSelectedPou=name;
+  renderCmpTree();
+  renderCmpCode(name);
+  buildCmpDiffBlocks();
+  // Rebuild highlight data for new POU (matches are already computed for all POUs)
+  if(document.getElementById('searchInput').value){
+    cmpBuildHighlightData();
+    cmpReRenderPanes();
+  }
+}
+
+function renderCmpCode(name){
+  const code1=(file1Data&&file1Data.pous[name])||'';
+  const code2=(file2Data&&file2Data.pous[name])||'';
+  const sp1=splitPouContent(code1);
+  const sp2=splitPouContent(code2);
+
+  // Diff for declaration parts
+  const declLines1=sp1.decl?sp1.decl.split('\n'):[];
+  const declLines2=sp2.decl?sp2.decl.split('\n'):[];
+  const declAligned=getDiffAligned(declLines1,declLines2);
+
+  // Diff for implementation parts
+  const implLines1=sp1.impl?sp1.impl.split('\n'):[];
+  const implLines2=sp2.impl?sp2.impl.split('\n'):[];
+  const implAligned=getDiffAligned(implLines1,implLines2);
+
+  // Save display data for search
+  cmpDisplayData={
+    cmpDeclHl1:declAligned.display1, cmpDeclHl2:declAligned.display2,
+    cmpImplHl1:implAligned.display1, cmpImplHl2:implAligned.display2
+  };
+
+  // Render all 4 panes
+  renderCmpPane('cmpDeclHl1','cmpDeclLn1',declAligned.display1);
+  renderCmpPane('cmpDeclHl2','cmpDeclLn2',declAligned.display2);
+  renderCmpPane('cmpImplHl1','cmpImplLn1',implAligned.display1);
+  renderCmpPane('cmpImplHl2','cmpImplLn2',implAligned.display2);
+
+  // Setup scroll sync
+  setupCmpScrollSync('cmpDeclScroll1','cmpDeclScroll2');
+  setupCmpScrollSync('cmpImplScroll1','cmpImplScroll2');
+  hookCmpDiffMapScroll();
+
+  // Show/hide impl row
+  const hasImpl=(implLines1.length>0||implLines2.length>0);
+  document.getElementById('cmpImplRow').style.display=hasImpl?'':'none';
+  document.getElementById('cmpResizer').style.display=hasImpl?'':'none';
+  if(!hasImpl){
+    document.getElementById('cmpDeclRow').style.flex='1';
+    document.getElementById('cmpDeclRow').style.height='auto';
+  }else{
+    document.getElementById('cmpDeclRow').style.flex='';
+    document.getElementById('cmpDeclRow').style.height='';
+  }
+  // Draw diff map after layout settles
+  requestAnimationFrame(()=>renderCmpDiffMap());
+}
+
+// ============================================================
+// Diff map bars (per-section minimap on right edge)
+// ============================================================
+const CMP_DIFFMAP_SECTIONS=[
+  {canvasId:'cmpDiffMapDecl',scrollId:'cmpDeclScroll1',hlId:'cmpDeclHl1'},
+  {canvasId:'cmpDiffMapImpl',scrollId:'cmpImplScroll1',hlId:'cmpImplHl1'}
+];
+const CMP_DIFFMAP_COLORS={mod:'#efcb05',del:'#ff7b72',add:'#56d364',placeholder:'rgba(86,211,100,0.5)'};
+
+function renderCmpDiffMap(){
+  for(const sec of CMP_DIFFMAP_SECTIONS) renderCmpDiffMapSection(sec);
+}
+
+function renderCmpDiffMapSection(sec){
+  const canvas=document.getElementById(sec.canvasId);
+  if(!canvas) return;
+  const row=canvas.parentElement;
+  if(!row||row.style.display==='none'||row.offsetHeight<1) return;
+
+  const dpr=window.devicePixelRatio||1;
+  const w=14, h=row.offsetHeight;
+  canvas.width=w*dpr;
+  canvas.height=h*dpr;
+  canvas.style.width=w+'px';
+  canvas.style.height=h+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+
+  const lines=cmpDisplayData[sec.hlId]||[];
+  if(!lines.length) return;
+  const lineH=h/lines.length;
+
+  // Draw diff lines
+  for(let i=0;i<lines.length;i++){
+    const c=CMP_DIFFMAP_COLORS[lines[i].type];
+    if(!c) continue;
+    ctx.fillStyle=c;
+    ctx.fillRect(0,i*lineH,w,Math.max(lineH,1));
+  }
+
+  // Draw viewport indicator
+  const scrollEl=document.getElementById(sec.scrollId);
+  const hlEl=document.getElementById(sec.hlId);
+  if(scrollEl&&hlEl){
+    const contentH=hlEl.scrollHeight||1;
+    const viewH=scrollEl.clientHeight;
+    const scrollTop=scrollEl.scrollTop;
+    const vpTop=(scrollTop/contentH)*h;
+    const vpH=Math.max((viewH/contentH)*h,6);
+    ctx.fillStyle='rgba(100,140,200,0.35)';
+    ctx.fillRect(0,vpTop,w,vpH);
+    ctx.strokeStyle='rgba(100,140,200,0.6)';
+    ctx.lineWidth=1;
+    ctx.strokeRect(0.5,vpTop+0.5,w-1,vpH-1);
+  }
+}
+
+// Click + drag handler for each diff map canvas
+(function initCmpDiffMapDrag(){
+  document.addEventListener('DOMContentLoaded',()=>{
+    for(const sec of CMP_DIFFMAP_SECTIONS){
+      const canvas=document.getElementById(sec.canvasId);
+      if(!canvas) continue;
+
+      function makeScrollFn(s){
+        return function(clientY){
+          const rect=canvas.getBoundingClientRect();
+          const y=clientY-rect.top;
+          const h=canvas.offsetHeight;
+          if(h<1) return;
+          const ratio=Math.max(0,Math.min(1,y/h));
+          const scrollEl=document.getElementById(s.scrollId);
+          const hlEl=document.getElementById(s.hlId);
+          if(scrollEl&&hlEl){
+            const contentH=hlEl.scrollHeight;
+            const viewH=scrollEl.clientHeight;
+            scrollEl.scrollTop=Math.max(0,ratio*contentH-viewH/2);
+          }
+        };
+      }
+      const scrollToY=makeScrollFn(sec);
+
+      canvas.addEventListener('mousedown',e=>{
+        e.preventDefault();
+        scrollToY(e.clientY);
+        function onMove(ev){scrollToY(ev.clientY);}
+        function onUp(){
+          document.removeEventListener('mousemove',onMove);
+          document.removeEventListener('mouseup',onUp);
+        }
+        document.addEventListener('mousemove',onMove);
+        document.addEventListener('mouseup',onUp);
+      });
+    }
+  });
+})();
+
+// Update diff map on scroll
+function hookCmpDiffMapScroll(){
+  for(const sec of CMP_DIFFMAP_SECTIONS){
+    const el=document.getElementById(sec.scrollId);
+    if(el&&!el._diffMapHooked){
+      el.addEventListener('scroll',()=>renderCmpDiffMapSection(sec));
+      el._diffMapHooked=true;
+    }
+  }
+}
+
+function renderCmpPane(hlId, lnId, displayLines){
+  const hlEl=document.getElementById(hlId);
+  const lnEl=document.getElementById(lnId);
+  // Build search highlight map from cmpHighlightData (Layer 2)
+  const highlights=cmpHighlightData[hlId]||[];
+  const searchMap=new Map();
+  for(const h of highlights){
+    if(!searchMap.has(h.displayIdx)) searchMap.set(h.displayIdx,[]);
+    const isCur=!!cmpCurMatchDisplay&&cmpCurMatchDisplay.paneId===hlId&&cmpCurMatchDisplay.displayIdx===h.displayIdx&&cmpCurMatchDisplay.start===h.start&&cmpCurMatchDisplay.end===h.end;
+    searchMap.get(h.displayIdx).push({start:h.start,end:h.end,isCur});
+  }
+  const htmlParts=[];
+  const lnParts=[];
+  for(let di=0;di<displayLines.length;di++){
+    const d=displayLines[di];
+    const cls=d.type==='placeholder'?'diff-line-placeholder':
+              d.type==='mod'?'diff-line-mod':
+              d.type==='del'?'diff-line-del':
+              d.type==='add'?'diff-line-add':'';
+    let lineHtml;
+    if(d.type==='placeholder'){
+      lineHtml='<span style="opacity:0">.</span>';
+    }else{
+      const marks=searchMap.get(di)||[];
+      if(!marks.length){
+        lineHtml=hlLine(d.content);
+      }else{
+        const sorted=[...marks].sort((a,b)=>a.start-b.start);
+        const parts=[];let pos=0;
+        for(const mk of sorted){
+          if(mk.start<pos) continue;
+          if(mk.start>pos) parts.push({text:d.content.slice(pos,mk.start),type:'plain'});
+          parts.push({text:d.content.slice(mk.start,mk.end),type:mk.isCur?'cur':'search'});
+          pos=mk.end;
+        }
+        if(pos<d.content.length) parts.push({text:d.content.slice(pos),type:'plain'});
+        lineHtml=parts.map(p=>{
+          if(p.type==='plain') return hlLine(p.text);
+          if(p.type==='cur') return `<span class="search-cur-hl">${esc(p.text)}</span>`;
+          return `<span class="search-hl">${esc(p.text)}</span>`;
+        }).join('');
+      }
+    }
+    htmlParts.push(cls?`<div class="${cls}">${lineHtml}</div>`:`<div>${lineHtml}</div>`);
+    if(d.type==='placeholder'){
+      lnParts.push(`<div class="cmp-line-num" style="opacity:0">.</div>`);
+    }else{
+      lnParts.push(`<div class="cmp-line-num">${d.lineNum}</div>`);
+    }
+  }
+  hlEl.innerHTML=htmlParts.join('');
+  lnEl.innerHTML=lnParts.join('');
+}
+
+let _cmpSyncPairs={};
+function setupCmpScrollSync(id1, id2){
+  const key=id1+'_'+id2;
+  // Clean up previous handlers
+  if(_cmpSyncPairs[key]){
+    const old=_cmpSyncPairs[key];
+    old.el1.removeEventListener('scroll',old.h1);
+    old.el2.removeEventListener('scroll',old.h2);
+  }
+  const el1=document.getElementById(id1);
+  const el2=document.getElementById(id2);
+  let syncing=false;
+  const h1=()=>{if(syncing)return;syncing=true;el2.scrollTop=el1.scrollTop;el2.scrollLeft=el1.scrollLeft;syncing=false;};
+  const h2=()=>{if(syncing)return;syncing=true;el1.scrollTop=el2.scrollTop;el1.scrollLeft=el2.scrollLeft;syncing=false;};
+  el1.addEventListener('scroll',h1);
+  el2.addEventListener('scroll',h2);
+  _cmpSyncPairs[key]={el1,el2,h1,h2};
+}
+
+// ============================================================
+// Comparison mode click tracking (side switching)
+// ============================================================
+let cmpClickStartPos=null; // {pouName, section, localLineIdx, col} - click position for search continuation
+let cmpDiffBlocks=[];   // [{section:'decl'|'impl', displayIdx:number}] diff block start positions in current POU
+let cmpDiffCurIdx=-1;   // current diff block index
+
+function onCmpCodeClick(e){
+  const hlEl=e.target.closest('.cmp-highlight');
+  if(!hlEl) return;
+  const paneId=hlEl.id;
+  if(!CMP_PANES_SET.has(paneId)) return;
+
+  // Extract side and section from paneId
+  const newSide=paneId.endsWith('1')?'left':'right';
+  const isDecl=paneId.startsWith('cmpDecl');
+  const section=isDecl?'decl':'impl';
+
+  // Calculate click position (line index in display data)
+  const hlRect=hlEl.getBoundingClientRect();
+  const scrollEl=hlEl.parentElement; // cmp-code-scroll
+  const relY=e.clientY-hlRect.top;
+
+  // Use computed line height from CSS (font-size:12px * line-height:1.6)
+  const cs=getComputedStyle(hlEl);
+  const fontSize=parseFloat(cs.fontSize)||12;
+  const lineH=parseFloat(cs.lineHeight)||(fontSize*1.6);
+  // Account for padding-top of .cmp-highlight (8px)
+  const padTop=parseFloat(cs.paddingTop)||8;
+  const displayIdx=Math.floor((relY-padTop)/lineH);
+
+  // Get display data and convert to raw position
+  const dl=cmpDisplayData[paneId];
+  if(dl && displayIdx>=0 && displayIdx<dl.length && dl[displayIdx].type!=='placeholder'){
+    const displayLine=dl[displayIdx];
+    // Calculate column position (approximate, based on character width)
+    const padLeft=parseFloat(cs.paddingLeft)||12;
+    const relX=e.clientX-hlRect.left-padLeft+(scrollEl?scrollEl.scrollLeft:0);
+    const charWidth=fontSize*0.6; // approximate monospace character width
+    const col=Math.max(0,Math.floor(relX/charWidth));
+
+    // Store click position for search continuation
+    cmpClickStartPos={
+      pouName: cmpSelectedPou,
+      section: section,
+      localLineIdx: displayLine.lineNum-1, // convert to 0-based
+      col: col
+    };
+  }
+
+  // Handle side switching (no scroll — scroll happens on F3/F2)
+  if(newSide!==cmpActiveSide){
+    cmpActiveSide=newSide;
+    const q=document.getElementById('searchInput').value;
+    if(q) runCmpSearch(true);   // rebuild matches + highlight, but skip scroll
+    else updateCmpSideIndicator();
+  }
+}
+
+// ============================================================
+// Comparison mode search
+// ============================================================
+const CMP_PANES=['cmpDeclHl1','cmpDeclHl2','cmpImplHl1','cmpImplHl2'];
+const CMP_PANES_SET=new Set(CMP_PANES);
+const CMP_SCROLL_MAP={cmpDeclHl1:'cmpDeclScroll1',cmpDeclHl2:'cmpDeclScroll2',cmpImplHl1:'cmpImplScroll1',cmpImplHl2:'cmpImplScroll2'};
+const CMP_LN_MAP={cmpDeclHl1:'cmpDeclLn1',cmpDeclHl2:'cmpDeclLn2',cmpImplHl1:'cmpImplLn1',cmpImplHl2:'cmpImplLn2'};
+let cmpCurMatchDisplay=null; // {paneId, displayIdx, start, end} current match mapped to display
+
+// -- Helper functions --
+
+function findAllInText(text,q){
+  const results=[];
+  if(optWord){
+    const re=new RegExp('\\b'+escRe(q)+'\\b',optCase?'g':'gi');
+    let m;
+    while((m=re.exec(text))!==null) results.push({start:m.index,end:m.index+m[0].length});
+  }else{
+    const src=optCase?text:text.toLowerCase();
+    const term=optCase?q:q.toLowerCase();
+    let idx=0;
+    while(true){
+      const f=src.indexOf(term,idx);if(f<0)break;
+      results.push({start:f,end:f+term.length});
+      idx=f+1;
+    }
+  }
+  return results;
+}
+
+function cmpFindInLine_raw(line,q,li,pouName,section){
+  const matches=findAllInText(line,q);
+  for(const m of matches){
+    cmpSearchMatches.push({pouName,section,localLineIdx:li,start:m.start,end:m.end});
+  }
+}
+
+function cmpGetActivePanes(){
+  if(cmpActiveSide==='left') return {decl:'cmpDeclHl1',impl:'cmpImplHl1'};
+  return {decl:'cmpDeclHl2',impl:'cmpImplHl2'};
+}
+
+function cmpBuildHighlightData(){
+  cmpHighlightData={};
+  const q=document.getElementById('searchInput').value;
+  if(!q||q.length<1||!cmpSelectedPou) return;
+  for(const pane of CMP_PANES){
+    const dl=cmpDisplayData[pane];
+    if(!dl) continue;
+    const hits=[];
+    for(let di=0;di<dl.length;di++){
+      if(dl[di].type==='placeholder') continue;
+      const lineMatches=findAllInText(dl[di].content,q);
+      for(const m of lineMatches) hits.push({displayIdx:di,start:m.start,end:m.end});
+    }
+    if(hits.length) cmpHighlightData[pane]=hits;
+  }
+}
+
+function cmpMapRawToDisplay(match){
+  const panes=cmpGetActivePanes();
+  const paneId=match.section==='decl'?panes.decl:panes.impl;
+  const dl=cmpDisplayData[paneId];
+  if(!dl) return null;
+  const targetLineNum=match.localLineIdx+1;
+  for(let di=0;di<dl.length;di++){
+    if(dl[di].lineNum===targetLineNum) return {paneId,displayIdx:di};
+  }
+  return null;
+}
+
+function cmpFindStartIdx(){
+  if(!cmpSearchMatches.length) return -1;
+
+  // If click position is set, find the first match from that position onward
+  if(cmpClickStartPos){
+    const {pouName, section, localLineIdx, col} = cmpClickStartPos;
+    // First, find matches in the same section starting from the clicked line
+    for(let i=0; i<cmpSearchMatches.length; i++){
+      const m=cmpSearchMatches[i];
+      if(m.pouName===pouName && m.section===section){
+        if(m.localLineIdx>localLineIdx ||
+           (m.localLineIdx===localLineIdx && m.start>=col)){
+          return i;
+        }
+      }
+    }
+    // If not found in same section, find in other section of same POU
+    for(let i=0; i<cmpSearchMatches.length; i++){
+      const m=cmpSearchMatches[i];
+      if(m.pouName===pouName){
+        return i;
+      }
+    }
+  }
+
+  // Default: find first match in current POU, otherwise first match overall
+  const idx=cmpSearchMatches.findIndex(m=>m.pouName===cmpSelectedPou);
+  if(idx>=0) return idx;
+  return 0;
+}
+
+// Reverse version: find last match BEFORE click position (for Shift+F3)
+function cmpFindStartIdxReverse(){
+  if(!cmpSearchMatches.length) return -1;
+
+  if(cmpClickStartPos){
+    const {pouName, section, localLineIdx, col} = cmpClickStartPos;
+    // Find last match in same section before click position
+    for(let i=cmpSearchMatches.length-1; i>=0; i--){
+      const m=cmpSearchMatches[i];
+      if(m.pouName===pouName && m.section===section){
+        if(m.localLineIdx<localLineIdx ||
+           (m.localLineIdx===localLineIdx && m.start<col)){
+          return i;
+        }
+      }
+    }
+    // If not found, find last match in same POU
+    for(let i=cmpSearchMatches.length-1; i>=0; i--){
+      if(cmpSearchMatches[i].pouName===pouName) return i;
+    }
+  }
+
+  // Default: last match in current POU, otherwise last match overall
+  for(let i=cmpSearchMatches.length-1; i>=0; i--){
+    if(cmpSearchMatches[i].pouName===cmpSelectedPou) return i;
+  }
+  return cmpSearchMatches.length-1;
+}
+
+function updateCmpSideIndicator(){
+  const headers=document.querySelectorAll('.cmp-file-header');
+  const q=document.getElementById('searchInput').value;
+  if(headers[0]) headers[0].classList.toggle('cmp-search-active',!!q&&cmpActiveSide==='left');
+  if(headers[1]) headers[1].classList.toggle('cmp-search-active',!!q&&cmpActiveSide==='right');
+}
+
+// -- Main search function (Layer 1 + Layer 2) --
+
+function runCmpSearch(skipScroll){
+  const q=document.getElementById('searchInput').value;
+  cmpSearchMatches=[];cmpSearchCurIdx=-1;cmpHighlightData={};
+
+  if(q.length>=1&&cmpTreeResult){
+    // Layer 1: Search active side's RAW code across all POUs
+    const fileData=cmpActiveSide==='left'?file1Data:file2Data;
+    if(fileData){
+      for(const r of cmpTreeResult){
+        const code=fileData.pous[r.name]||'';
+        if(!code) continue;
+        const sp=splitPouContent(code);
+        if(sp.decl){
+          const declLines=sp.decl.split('\n');
+          for(let li=0;li<declLines.length;li++) cmpFindInLine_raw(declLines[li],q,li,r.name,'decl');
+        }
+        if(sp.impl){
+          const implLines=sp.impl.split('\n');
+          for(let li=0;li<implLines.length;li++) cmpFindInLine_raw(implLines[li],q,li,r.name,'impl');
+        }
+      }
+    }
+    if(cmpSearchMatches.length>0) cmpSearchCurIdx=cmpFindStartIdx();
+    // Consume click position when search scrolls (F2/input); keep it for F3 if skipScroll
+    if(!skipScroll) cmpClickStartPos=null;
+    // Layer 2: Highlight data for current POU (both sides)
+    cmpBuildHighlightData();
+  }
+
+  updateCmpSideIndicator();
+  updateCount();
+  renderCmpTree();
+  cmpReRenderPanes();
+  if(!skipScroll && cmpSearchCurIdx>=0) cmpScrollToMatch();
+}
+
+function cmpReRenderPanes(){
+  // Compute current match display position for highlight
+  cmpCurMatchDisplay=null;
+  if(cmpSearchCurIdx>=0){
+    const m=cmpSearchMatches[cmpSearchCurIdx];
+    if(m&&m.pouName===cmpSelectedPou){
+      const mapped=cmpMapRawToDisplay(m);
+      if(mapped) cmpCurMatchDisplay={paneId:mapped.paneId,displayIdx:mapped.displayIdx,start:m.start,end:m.end};
+    }
+  }
+  for(const pane of CMP_PANES){
+    const dl=cmpDisplayData[pane];
+    if(dl) renderCmpPane(pane,CMP_LN_MAP[pane],dl);
+  }
+}
+
+// -- Navigation (POU-crossing) --
+
+function cmpNeedReanchor(){
+  if(cmpSearchCurIdx<0) return false;
+  const cur=cmpSearchMatches[cmpSearchCurIdx];
+  if(!cur) return false;
+  return cur.pouName!==cmpSelectedPou;
+}
+
+function cmpReanchor(forward){
+  if(!cmpTreeResult) return;
+  const pouIdx=cmpTreeResult.findIndex(r=>r.name===cmpSelectedPou);
+  if(forward){
+    const idx=cmpSearchMatches.findIndex(m=>m.pouName===cmpSelectedPou);
+    if(idx>=0){cmpSearchCurIdx=idx;return;}
+    for(let pi=pouIdx+1;pi<cmpTreeResult.length;pi++){
+      const ni=cmpSearchMatches.findIndex(m=>m.pouName===cmpTreeResult[pi].name);
+      if(ni>=0){cmpSearchCurIdx=ni;return;}
+    }
+    cmpSearchCurIdx=0;
+  }else{
+    let lastIdx=-1;
+    for(let i=cmpSearchMatches.length-1;i>=0;i--){
+      if(cmpSearchMatches[i].pouName===cmpSelectedPou){lastIdx=i;break;}
+    }
+    if(lastIdx>=0){cmpSearchCurIdx=lastIdx;return;}
+    for(let pi=pouIdx-1;pi>=0;pi--){
+      for(let i=cmpSearchMatches.length-1;i>=0;i--){
+        if(cmpSearchMatches[i].pouName===cmpTreeResult[pi].name){cmpSearchCurIdx=i;return;}
+      }
+    }
+    cmpSearchCurIdx=cmpSearchMatches.length-1;
+  }
+}
+
+function cmpNextMatch(){
+  if(!cmpSearchMatches.length) return;
+  // If click position is set, jump to the first match after that position
+  if(cmpClickStartPos){
+    const startIdx=cmpFindStartIdx();
+    cmpClickStartPos=null; // consume click position
+    if(startIdx>=0){cmpSearchCurIdx=startIdx;cmpJumpTo();return;}
+  }
+  if(cmpNeedReanchor()){cmpReanchor(true);cmpJumpTo();return;}
+  cmpSearchCurIdx=(cmpSearchCurIdx+1)%cmpSearchMatches.length;
+  cmpJumpTo();
+}
+
+function cmpPrevMatch(){
+  if(!cmpSearchMatches.length) return;
+  // If click position is set, jump to the last match before that position
+  if(cmpClickStartPos){
+    const startIdx=cmpFindStartIdxReverse();
+    cmpClickStartPos=null; // consume click position
+    if(startIdx>=0){cmpSearchCurIdx=startIdx;cmpJumpTo();return;}
+  }
+  if(cmpNeedReanchor()){cmpReanchor(false);cmpJumpTo();return;}
+  cmpSearchCurIdx=(cmpSearchCurIdx-1+cmpSearchMatches.length)%cmpSearchMatches.length;
+  cmpJumpTo();
+}
+
+function cmpJumpTo(){
+  if(cmpSearchCurIdx<0) return;
+  const m=cmpSearchMatches[cmpSearchCurIdx];
+  if(!m) return;
+  // Switch POU if needed
+  if(m.pouName!==cmpSelectedPou){
+    cmpSelectedPou=m.pouName;
+    renderCmpTree();
+    renderCmpCode(m.pouName);
+    cmpBuildHighlightData();
+  }
+  updateCount();
+  cmpReRenderPanes();
+  requestAnimationFrame(()=>cmpScrollToMatch());
+}
+
+function cmpScrollToMatch(){
+  if(cmpSearchCurIdx<0) return;
+  const m=cmpSearchMatches[cmpSearchCurIdx];
+  if(!m) return;
+  const mapped=cmpMapRawToDisplay(m);
+  if(!mapped) return;
+  const scrollId=CMP_SCROLL_MAP[mapped.paneId];
+  const scroll=document.getElementById(scrollId);
+  const hl=document.getElementById(mapped.paneId);
+  if(!scroll||!hl) return;
+  const dl=cmpDisplayData[mapped.paneId];
+  const lineCount=dl?dl.length:1;
+  const lh=lineCount>0?hl.scrollHeight/lineCount:20;
+  const targetY=mapped.displayIdx*lh;
+  const viewH=scroll.clientHeight;
+  if(targetY<scroll.scrollTop+40||targetY+lh>scroll.scrollTop+viewH-40){
+    scroll.scrollTop=Math.max(0,targetY-viewH/3);
+  }
+}
+
+// ============================================================
+// Comparison mode: diff block navigation (▲▼ jump)
+// ============================================================
+function buildCmpDiffBlocks(){
+  cmpDiffBlocks=[];
+  cmpDiffCurIdx=-1;
+  if(!cmpSelectedPou||!cmpDisplayData) return;
+
+  // Scan decl and impl sections — a diff block = consecutive non-match lines
+  const sectionConfigs=[
+    {section:'decl', hl1:'cmpDeclHl1', hl2:'cmpDeclHl2'},
+    {section:'impl', hl1:'cmpImplHl1', hl2:'cmpImplHl2'}
+  ];
+  for(const sc of sectionConfigs){
+    const dl1=cmpDisplayData[sc.hl1]||[];
+    const dl2=cmpDisplayData[sc.hl2]||[];
+    const len=Math.max(dl1.length,dl2.length);
+    let inBlock=false;
+    for(let i=0;i<len;i++){
+      const t1=dl1[i]?dl1[i].type:'placeholder';
+      const t2=dl2[i]?dl2[i].type:'placeholder';
+      const isDiff=(t1!=='match'||t2!=='match');
+      if(isDiff&&!inBlock){
+        cmpDiffBlocks.push({section:sc.section, displayIdx:i});
+        inBlock=true;
+      }else if(!isDiff){
+        inBlock=false;
+      }
+    }
+  }
+  // Update count display
+  const countEl=document.getElementById('cmpDiffCount');
+  if(countEl) countEl.textContent=cmpDiffBlocks.length>0?cmpDiffBlocks.length+'箇所':'';
+}
+
+function cmpNextDiff(){
+  if(!cmpDiffBlocks.length) return;
+  if(cmpClickStartPos){
+    // Find first diff block after click position
+    const clickSection=cmpClickStartPos.section;
+    const clickLine=cmpClickStartPos.localLineIdx;
+    cmpClickStartPos=null;
+    // Map click localLineIdx to displayIdx
+    const clickDisplayIdx=cmpMapClickToDisplayIdx(clickSection,clickLine);
+    let found=-1;
+    for(let i=0;i<cmpDiffBlocks.length;i++){
+      const b=cmpDiffBlocks[i];
+      if(b.section===clickSection&&b.displayIdx>clickDisplayIdx){found=i;break;}
+      if(b.section==='impl'&&clickSection==='decl'){found=i;break;}
+    }
+    if(found<0) found=0; // wrap around
+    cmpDiffCurIdx=found;
+  }else{
+    cmpDiffCurIdx=(cmpDiffCurIdx+1)%cmpDiffBlocks.length;
+  }
+  cmpScrollToDiffBlock(cmpDiffCurIdx);
+}
+
+function cmpPrevDiff(){
+  if(!cmpDiffBlocks.length) return;
+  if(cmpClickStartPos){
+    // Find last diff block before click position
+    const clickSection=cmpClickStartPos.section;
+    const clickLine=cmpClickStartPos.localLineIdx;
+    cmpClickStartPos=null;
+    const clickDisplayIdx=cmpMapClickToDisplayIdx(clickSection,clickLine);
+    let found=-1;
+    for(let i=cmpDiffBlocks.length-1;i>=0;i--){
+      const b=cmpDiffBlocks[i];
+      if(b.section===clickSection&&b.displayIdx<clickDisplayIdx){found=i;break;}
+      if(b.section==='decl'&&clickSection==='impl'){found=i;break;}
+    }
+    if(found<0) found=cmpDiffBlocks.length-1; // wrap around
+    cmpDiffCurIdx=found;
+  }else{
+    cmpDiffCurIdx=(cmpDiffCurIdx-1+cmpDiffBlocks.length)%cmpDiffBlocks.length;
+  }
+  cmpScrollToDiffBlock(cmpDiffCurIdx);
+}
+
+function cmpMapClickToDisplayIdx(section,localLineIdx){
+  // Map localLineIdx (raw 0-based) to displayIdx in active side pane
+  const paneId=(section==='decl'?'cmpDeclHl':'cmpImplHl')+(cmpActiveSide==='left'?'1':'2');
+  const dl=cmpDisplayData[paneId]||[];
+  for(let i=0;i<dl.length;i++){
+    if(dl[i].lineNum&&dl[i].lineNum-1>=localLineIdx) return i;
+  }
+  return dl.length-1;
+}
+
+function cmpScrollToDiffBlock(blockIdx){
+  if(blockIdx<0||blockIdx>=cmpDiffBlocks.length) return;
+  const block=cmpDiffBlocks[blockIdx];
+  // Determine scroll container and highlight element
+  const isDecl=block.section==='decl';
+  const scrollEl=document.getElementById(isDecl?'cmpDeclScroll1':'cmpImplScroll1');
+  const hlEl=document.getElementById(isDecl?'cmpDeclHl1':'cmpImplHl1');
+  if(!scrollEl||!hlEl) return;
+  const dl=cmpDisplayData[isDecl?'cmpDeclHl1':'cmpImplHl1']||[];
+  const lineCount=dl.length||1;
+  const lh=lineCount>0?hlEl.scrollHeight/lineCount:20;
+  const targetY=block.displayIdx*lh;
+  const viewH=scrollEl.clientHeight;
+  scrollEl.scrollTop=Math.max(0,targetY-viewH/3);
+  // Update count display to show current position
+  const countEl=document.getElementById('cmpDiffCount');
+  if(countEl) countEl.textContent=(blockIdx+1)+'/'+cmpDiffBlocks.length+'箇所';
 }
 
 // ============================================================
