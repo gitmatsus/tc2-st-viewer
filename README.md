@@ -5,7 +5,13 @@ Beckhoff社の **TwinCAT 2** で作成されたプロジェクトファイル（
 PLCの現場やオフィスで、専用のIDE（PLC Control）を立ち上げることなく、素早くコードを確認・比較することを目的として設計されています。
 
 **🔗 公開URL:** [https://gitmatsus.github.io/tc2-st-viewer/](https://gitmatsus.github.io/tc2-st-viewer/)
+---
 
+### 🌐 ブラウザで今すぐ利用する
+以下のURLから、ブラウザ上で直接ツールを起動できます。
+**[https://gitmatsus.github.io/tc2-st-viewer/tc2_viewer.html](https://gitmatsus.github.io/tc2-st-viewer/tc2_viewer.html)**
+> ※ ツールはHTMLファイル1つで完結しており、サーバーへデータを送信することなくローカル環境で動作します。
+> 
 ---
 
 ## 🚀 主な機能
